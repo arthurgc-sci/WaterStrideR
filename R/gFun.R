@@ -1,15 +1,3 @@
-###INSTALL AND LOAD PACKAGES
-list_packages = c('dplyr', 'ggplot2', 'magrittr', 'cluster', 'imager', 'mclust', 'purrr',
-                  'Momocs', 'pracma', 'ade4', 'BiocManager', 'MASS', 'progress', 'rootSolve')
-new_pack = list_packages[!(list_packages %in% installed.packages()[,"Package"])]
-if(length(new_pack)){install.packages(new_pack)}
-for(pkg in list_packages) {library(pkg, character.only = TRUE)}
-if (!requireNamespace('EBImage', quietly = TRUE)) {
-  BiocManager::install('EBImage')
-}
-library('EBImage')
-
-
 #IMAGE#####################################################################################################
 ####
 # Utility functions for imager::cimg objects.
@@ -1231,13 +1219,16 @@ recropBodies <- function(body_coords, base_img, crop_coords){
 #'
 #' @export
 dilBodies <- function(body_img, body_length){
+  if (!requireNamespace("EBImage", quietly = TRUE)) {
+    stop("Le package 'EBImage' est requis. Veuillez l’installer avec : BiocManager::install('EBImage')", call. = FALSE)
+  }
   kernels <- lapply(body_length, function(x){ #adaptative dilation kernel based on body length
     size <- round(x * 1.3 - x + 1)
     size <- ifelse(size %% 2 == 0, size + 1, size)  # Round to an odd number to avoid warnings in makeBrush
     EBImage::makeBrush(size, shape='disc')
   })
   dil_body <- mapply(function(crop, kern){
-    EBImage::dilate(crop, kern=kern)
+    EBImage::dilate(crop, kern=kern) #TODO imager::dilate(crop, kern=kern) ? to delete EBI...
   }, body_img, kernels) #dilation around body to ensure intersecting legs and not the body
   return(dil_body)
 }
