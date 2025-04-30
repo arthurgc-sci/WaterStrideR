@@ -1,6 +1,5 @@
 #utils related to insect leg analysis pipeline developped here mostly by Arthur Gairin-Calvo but also Laurent Gilquin
 #---------------------------------------------------------------------------------------------------
-importFrom(magrittr, `%>%`)
 
 #' Correct illumination
 #'
