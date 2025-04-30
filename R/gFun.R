@@ -133,6 +133,11 @@ gNobody <- function(base_img, body_lab_points, viz=F){
 #'
 #' Binarize gerris by setting a fixed threshold per input image using GMM derivative
 #'
+#' @param gerris_crops c.img or list of c.img of cropped binary individuals
+#' @param nG number of gaussians to fit in GMM
+#' @param noise_n normal noise to add to histogram data, helps breaking plateaus
+#' @param y_root see gMMThresh
+#' @param msg logical for display of diagnostic messages
 #' @export
 gGMMThresh <- function(gerris_crops, nG=2, noise_n=0.005, y_root=-25, msg=T){
   if(is.list(gerris_crops)){ #Vectorization

@@ -6,6 +6,17 @@
 \usage{
 gGMMThresh(gerris_crops, nG = 2, noise_n = 0.005, y_root = -25, msg = T)
 }
+\arguments{
+\item{gerris_crops}{c.img or list of c.img of cropped binary individuals}
+
+\item{nG}{number of gaussians to fit in GMM}
+
+\item{noise_n}{normal noise to add to histogram data, helps breaking plateaus}
+
+\item{y_root}{see gMMThresh}
+
+\item{msg}{logical for display of diagnostic messages}
+}
 \description{
 Binarize gerris by setting a fixed threshold per input image using GMM derivative
 }
