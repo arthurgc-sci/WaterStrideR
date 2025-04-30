@@ -222,7 +222,7 @@ dilBodies <- function(body_img, body_length){
   kernels <- lapply(body_length, function(x){ #adaptative dilation kernel based on body length
     size <- round(x * 1.3 - x + 1)
     size <- ifelse(size %% 2 == 0, size + 1, size)  # Round to an odd number to avoid warnings in makeBrush
-    make_disc_kernel(size, shape='disc')
+    make_disc_kernel(size)
   })
   dil_body <- mapply(function(crop, kern){
     imager::dilate(crop, kern=kern) #TODO TO TEST, REPLACED EBI
