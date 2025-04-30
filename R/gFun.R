@@ -1,5 +1,6 @@
 # Gerroidea specific functions, used in gPipeline
 #---------------------------------------------------------------------------------------------------
+importFrom(magrittr, `%>%`)
 
 #' Fast segmentation with size filter
 #'
