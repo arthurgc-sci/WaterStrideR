@@ -1,9 +1,9 @@
 Package: WaterStrideR
-Title: What the Package Does (One Line, Title Case)
+Title: Leg Measurement, Sex and Wing Prediction for Microvelia longipes
 Version: 0.0.0.9000
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Description: Image analysis, statistical, logical tools and pipeline for leg measurement, sex and wing prediction of Microvelia longipes (Hemiptera, Gerroidea, Veliidae) from images including multiple individuals. Scaling is automatized if the image include a millimetric orange-red ruler.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
