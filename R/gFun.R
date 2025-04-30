@@ -846,7 +846,7 @@ gPredictWing <- function(PCA_scores, sex_class, LDA_f, LDA_m, wing_names = c(1,2
 #' @export
 gPipeline <- function(img_path, write_df=T, write_plots=T, df_output=T){
   message("1 - Loading and segmenting image")
-  base_img <- load.image(img_path)
+  base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
   img_bin <- binaryLoad(img_path, thresh) #load and binarize image
   #Segmenting image
