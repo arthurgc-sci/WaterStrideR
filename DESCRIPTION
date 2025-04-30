@@ -16,17 +16,11 @@ URL: https://github.com/arthurgc-sci/WaterStrideR
 BugReports: https://github.com/arthurgc-sci/WaterStrideR/issues
 Imports:
     dplyr,
-    ggplot2,
     magrittr,
-    cluster,
     imager,
     mclust,
-    purrr,
     Momocs,
     pracma,
-    ade4,
     MASS,
     progress,
     rootSolve
-Suggests:
-    BiocManager
