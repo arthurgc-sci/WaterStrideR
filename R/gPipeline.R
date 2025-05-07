@@ -80,6 +80,10 @@ gPipeline <- function(img_path, write_output=T, return_df=T, single_write=T, thr
   message("| \n8 - Sex and wing prediction")
   #elliptic fourier harmonics reduced with PCA
   hPCA <- scoresEFA(body_l_crops, ang, nb_h=7, viz=F)
+  #loading LDA models from package
+  LDA_sex <- loadLDA("LDAsex")
+  LDA_wingF <- loadLDA("LDAwingF")
+  LDA_wingM <- loadLDA("LDAwingM")
   #predict sex using LDA model
   sex_prediction <- gPredictLDA(LDA_sex, hPCA) #LDA trained on 2PC of 7EF
   #Predict presence of wings using LDA model
