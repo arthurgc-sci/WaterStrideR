@@ -851,8 +851,9 @@ gPredictWing <- function(PCA_scores, sex_class, LDA_f, LDA_m, wing_names = c(1,2
 #' @param write_df a boolean, to save metrics as csv
 #' @param write_plots a boolean, to save image analysis diagnostic plots
 #' @param df_output a boolean, to return metrics in R
+#' @param tresh a numerical value for image thresholding
 #' @export
-gPipeline <- function(img_path, write_df=T, write_plots=T, df_output=T){
+gPipeline <- function(img_path, write_df=T, write_plots=T, df_output=T, thresh=0.8){
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
