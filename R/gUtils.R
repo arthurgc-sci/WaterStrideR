@@ -399,7 +399,7 @@ imgAsCoords <- function(img){
 #'
 #' @export
 coordsToLinear <- function(coords, img){
-  return((coords[,2]-1) * width(img) + coords[,1])
+  return((coords[,2]-1) * imager::width(img) + coords[,1])
 }
 
 
