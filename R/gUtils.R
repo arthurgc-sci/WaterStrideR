@@ -187,9 +187,9 @@ nZeros <- function(text, zeros=1){
 redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F, msg=T){
   # Get ruler as the biggest set of red pixels from the image
   if(msg) message("--- scaling - Extracting ruler...")
-  IR <- correct_illumination(R(img)) #RGB components with linear correction of illumination
-  GR <- correct_illumination(G(img))
-  BR <- correct_illumination(B(img))
+  IR <- correct_illumination(imager::R(img)) #RGB components with linear correction of illumination
+  GR <- correct_illumination(imager::G(img))
+  BR <- correct_illumination(imager::B(img))
   red_mask <-  (IR>GR+red_thresh & IR>BR+red_thresh ) #red only component of the image (with few red and blue compared to red)
   lab0 <- imager::label(red_mask)
   lab <- lab0[lab0>0] #filter segmentation of background
