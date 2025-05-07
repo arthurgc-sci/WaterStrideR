@@ -83,7 +83,7 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
   res <- lapply(crop_points, function(crop_pt_df){
     xrange <- crop_pt_df[,1]
     yrange <- crop_pt_df[,2]
-    crop <- imager::imsub(base_img, x interval::%inr% xrange, y interval::%inr% yrange)
+    crop <- imager::imsub(base_img, x %inr% xrange, y %inr% yrange)
     crop[which(crop==1)] <- max(crop[which(crop!=1)])
     out <- crop %>% grayscale %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
     pb$tick()
