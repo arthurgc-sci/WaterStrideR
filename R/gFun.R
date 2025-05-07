@@ -72,7 +72,7 @@ cropPoints = function(list_points, list_size, scaling_factor=1){
 #' @export
 gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
   #Error handling
-  if(!is.cimg(base_img)) stop("Error : base_img must be of type c.img")
+  if(!imager::is.cimg(base_img)) stop("Error : base_img must be of type c.img")
   if(!is.list(centroids)) stop("Error : centroids must be a list")
   if(!is.list(sizes) && !is.vector(sizes)) stop("Error : sizes must be a vector or a list")
   if(length(sizes)!=length(centroids)) stop("Error : centroids and sizes lengths must be equal")
@@ -113,7 +113,7 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
 gNobody <- function(base_img, body_lab_points, viz=F){
   #Error handling
   if(!is.matrix(body_lab_points) & !is.list(body_lab_points) & !is.matrix(body_lab_points)) stop("Error : body_lab_points should be a list of dataframes, a dataframe or a matrix")
-  if(!is.cimg(base_img)) stop("Error : base_img must be of type c.img")
+  if(!imager::is.cimg(base_img)) stop("Error : base_img must be of type c.img")
   if(!is.list(body_lab_points)){ #if it's a coordinates matrix or a dataframe
     allbodies <- body_lab_points
   } else {
@@ -169,11 +169,11 @@ gGMMThresh <- function(gerris_crops, nG=2, noise_n=0.005, y_root=-25, msg=T){
 gCleanBin <- function(l_img_bin, centroid, as_coords=T){
   if(!is.list(l_img_bin)){
     if(all(is.na(l_img_bin)) | all(is.na(centroid))) { return(NA) }
-    if(!is.cimg(l_img_bin) & !is.pixset(l_img_bin)) {
+    if(!imager::is.cimg(l_img_bin) & !imager::is.pixset(l_img_bin)) {
       stop("l_img_bin must be a c.img or list of c.img") #error handling
     }
   } else { #if it is a list, check the content
-    if(!is.cimg(l_img_bin[[1]]) & !is.pixset(l_img_bin[[1]])) {
+    if(!imager::is.cimg(l_img_bin[[1]]) & !imager::is.pixset(l_img_bin[[1]])) {
       stop("l_img_bin must be a c.img or list of c.img") #error handling
     }
   }
@@ -189,7 +189,7 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=T){
   if(all(is.na(l_img_bin))) return(NA)
   #0 innit
   dimX <- nrow(l_img_bin); dimY <- ncol(l_img_bin)
-  labs0 <- label(im=l_img_bin) #label different connected white patches
+  labs0 <- imager::label(im=l_img_bin) #label different connected white patches
   labs <- labs0
   labs[which(l_img_bin==0)] <- 0
   #1 Get body label
@@ -212,7 +212,7 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=T){
 #'base_img : a single c.img / body_coords : list of body coordinates / crop_coords : list of 2x2 crop matrices
 #' @export
 recropBodies <- function(body_coords, base_img, crop_coords){
-  empty_base_img <- imfill(dim = dim(base_img), val = 0) #create empty image with base image dimensions
+  empty_base_img <- imager::imfill(dim = dim(base_img), val = 0) #create empty image with base image dimensions
   body_l_coords <- lapply(body_coords, coordsToLinear, img = base_img) #linear coordinates in the base image of body points
   body_l_crops <- mapply(function(body, crop){ #crop them with the same crop as for the legs to preserve coordinates
     empty_base_img[body] <- 1 #only fill the specific individuals point to avoid overlap related issues
@@ -725,7 +725,7 @@ gSplitLegMeasures <- function(leg_list) {
     left_tibia = left_tibia
   )
   l_out2 <- lapply(l_out, unlist)
-  l_out3 <- lapply(l_out2, function(x) setNames(x, seq_along(x)) )
+  l_out3 <- lapply(l_out2, function(x) stats::setNames(x, seq_along(x)) )
   return(l_out3)
 }
 
@@ -767,7 +767,7 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
     scale_cont %>% stack #outlines superposition
     scale_cont %>% panel #all outlines
     scale_cont %>% Momocs::calibrate_harmonicpower_efourier(nb.h=nb_h) #elliptic fourier calibration
-    plot_PCA(Momocs::PCA(efa))
+    Momocs::plot_PCA(Momocs::PCA(efa))
   }
   #re-adding missing lines
   scores <- efa_pca$x[,1:20]

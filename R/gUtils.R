@@ -264,7 +264,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
 #'
 #' @export
 GMM <- function(img_val, n=1:9, keep_max=T, viz=F, n_noise_sd=0){
-  if(is.cimg(img_val)){
+  if(imager::is.cimg(img_val)){
     img_val <- img_val %>% as.numeric #conversion to numeric if the input is still an image
   }
   if(n_noise_sd != 0){
@@ -306,7 +306,7 @@ GMMquant <- function(gmm_model_df, q, viz=F){
       pnorm(x, mean=df["mu"], sd=df["sd"]) * df["w"]
     }) %>% sum - q
   }
-  x_quant <- uniroot(f, c(0,10))[1] %>% unlist #TODO INTERVAL???
+  x_quant <- stats::uniroot(f, c(0,10))[1] %>% unlist #TODO INTERVAL???
   if(viz){ #visualization option
     x_vals <- seq(0, 1, by=10e-4)
     f2 <- function(x){
@@ -498,14 +498,14 @@ contourTurns <- function(coords, search_w=5, splines_df=30, angle_thresh=0.15, v
     angcont <- c(angcont, var)
   }
   index <- seq(1, lcont)
-  m_index <- c(index-max(index), index, index+max(index)) #on met bout à bout 3 fois la séquence
+  m_index <- c(index-max(index), index, index+max(index)) #on met bout à bout 3 fois la sequence
   m_angcont <- rep(angcont, 3)
   #splines and max
   splines_df_3 <- splines_df*3
   if(splines_df_3 >= (length(unique(m_index))-1) ) {
     stop("Contour smaller than splines_df")
   }
-  m_smoothed <- smooth.spline(m_index, m_angcont, df=splines_df_3) #splines
+  m_smoothed <- stats::smooth.spline(m_index, m_angcont, df=splines_df_3) #splines
   m_pred <- predict(m_smoothed) #model prediction for initial values
   md_pred <- diff(m_pred$y)/diff(m_pred$x) #derivative
   cross0 <- which(diff(sign(md_pred))!=0)+1 #f'=0 -> plateau
