@@ -85,7 +85,7 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
     yrange <- crop_pt_df[,2]
     crop <- imager::imsub(base_img, x %inr% xrange, y %inr% yrange)
     crop[which(crop==1)] <- max(crop[which(crop!=1)])
-    out <- crop %>% grayscale %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
+    out <- crop %>% imager::grayscale %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
     pb$tick()
     return(out)
   })
@@ -669,7 +669,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
           size <- round(size, 1)
           off <- 0.2
           ft <- 11
-          colo <- alpha("black", 0.9)
+          colo <- "#000000E6" #E6 is for transparency
           posi <- 2
           text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi)
           text(x=pt[1]+off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)
@@ -765,7 +765,7 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
   if(viz){ #visualization
     par(mfrow=c(1,1))
     scale_cont %>% stack #outlines superposition
-    scale_cont %>% panel #all outlines
+    scale_cont %>% Momocs::panel #all outlines
     scale_cont %>% Momocs::calibrate_harmonicpower_efourier(nb.h=nb_h) #elliptic fourier calibration
     Momocs::plot_PCA(Momocs::PCA(efa))
   }
