@@ -296,8 +296,7 @@ boolSeqLim <- function(v, circular = T){ #circular :
     v0 <- c(v[l_v],v) # v
     v1 <- c(v,v[1]) # v+1
   } else {
-    print('Non circular boolSeqLim non implemented yet')
-    break()
+    stop("Non-circular boolSeqLim not implemented yet")
   }
   first <- mapply(bool_first, v0, v1)[-(l_v+1)] #which 0 are followed by 1
   last <- mapply(bool_last, v0, v1)[-1] #which 1 are followed by 0

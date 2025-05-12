@@ -503,7 +503,7 @@ contourTurns <- function(coords, search_w=5, splines_df=30, angle_thresh=0.15, v
     angcont <- c(angcont, var)
   }
   index <- seq(1, lcont)
-  m_index <- c(index-max(index), index, index+max(index)) #on met bout à bout 3 fois la sequence
+  m_index <- c(index-max(index), index, index+max(index)) #on met bout a bout 3 fois la sequence
   m_angcont <- rep(angcont, 3)
   #splines and max
   splines_df_3 <- splines_df*3
