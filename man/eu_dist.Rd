@@ -6,6 +6,12 @@
 \usage{
 eu_dist(v1, v2)
 }
+\arguments{
+\item{v1}{numerical vector of length 2}
+
+\item{v2}{numerical vector of length 2}
+}
 \description{
 Euclidian distance between two points
 }
+\keyword{internal}

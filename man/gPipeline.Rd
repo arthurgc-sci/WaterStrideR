@@ -20,6 +20,11 @@ gPipeline(
 
 \item{return_df}{logical, to return metrics in R}
 
+\item{single_write}{logical, writing method for gWritePipeline()}
+
+\item{thresh}{numerical value in range 0:1, global gray-value threshold
+for the initial binarization of the input image}
+
 \item{winged_names}{vector, two names for not-winged / winged individuals}
 }
 \description{

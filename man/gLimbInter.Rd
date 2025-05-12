@@ -6,6 +6,9 @@
 \usage{
 gLimbInter(v)
 }
+\arguments{
+\item{v}{a vector of logical values}
+}
 \description{
 For v a boolean of intersection points in the contour, assume limb intersections as continuous sequences
 of intersection values in the contour. Compute first, last, and middle point of each sequence

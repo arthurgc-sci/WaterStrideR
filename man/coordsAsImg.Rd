@@ -6,6 +6,13 @@
 \usage{
 coordsAsImg(coords, padding = 0, return_offset = F)
 }
+\arguments{
+\item{coords}{matrix or dataframe of numerical coordinates}
+
+\item{padding}{numerical integer of padding to add to the crop}
+
+\item{return_offset}{logical. to also return offset value of recrop}
+}
 \description{
 Convert xy coordinates dataset as square c.img with padding
 }

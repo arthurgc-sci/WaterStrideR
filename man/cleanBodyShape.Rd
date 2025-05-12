@@ -6,6 +6,13 @@
 \usage{
 cleanBodyShape(body_lab_points, kernel_size = 3, as_coords = T)
 }
+\arguments{
+\item{body_lab_points}{body points as numerical matrix or dataframe}
+
+\item{kernel_size}{numerical integer. closing and opening kernel size in pixels}
+
+\item{as_coords}{logical. to return}
+}
 \description{
 Square closing then closing of size kernel_size on body coordinates body_lab_points
 Returns either coordinates as_coord, or an image c.img

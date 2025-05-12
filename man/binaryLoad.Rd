@@ -6,6 +6,11 @@
 \usage{
 binaryLoad(img_path, threshold)
 }
+\arguments{
+\item{img_path}{a string. path to the base image}
+
+\item{threshold}{a numerical in range 0:1 for binarization threshold}
+}
 \description{
 Load image from given path, negative filter, illumination correction filter, binarization based on threshold
 }

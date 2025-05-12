@@ -6,6 +6,9 @@
 \usage{
 imgAsCoords(img)
 }
+\arguments{
+\item{img}{a pixet or c.img image}
+}
 \description{
 Image '1' values as xy coordinates
 }

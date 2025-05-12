@@ -18,6 +18,30 @@ gGerrisPlot(
   clean_base_path
 )
 }
+\arguments{
+\item{i}{index of the individual to plot in the list-format variables of gPipeline()}
+
+\item{full}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{body}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{cen}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{dilcont}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{ang}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{legs}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{leg_lm}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{leg_size}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{inser}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{clean_base_path}{Similar to the internal variable of the same name in gPipeline()}
+}
 \description{
-Individual plot for gPipeline
+Individual plot for gPipeline, designed to be used on lists of internal
+variables of gPipepline()
 }

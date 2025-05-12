@@ -6,6 +6,11 @@
 \usage{
 boolSeqLim(v, circular = T)
 }
+\arguments{
+\item{v}{a vector of logical values}
+
+\item{circular}{a logical for prior assumption of circularity of v}
+}
 \description{
 Give matching index of first and last True values of sequences of True in v
 }

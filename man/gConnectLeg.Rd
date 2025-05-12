@@ -6,6 +6,13 @@
 \usage{
 gConnectLeg(body, landmarks, viz = F)
 }
+\arguments{
+\item{body}{dataframe or matrix of body points coordinates}
+
+\item{landmarks}{landmarks as output of gLegLandmarks()}
+
+\item{viz}{logical.visualization option}
+}
 \description{
 As gLegLandmarks finds insertion point on dilated body, the insertion landmark is biased
 Given body as xy coords and landmarks as output of gLegLandmarks, corrects the insertion point

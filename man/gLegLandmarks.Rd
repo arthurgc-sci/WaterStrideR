@@ -13,6 +13,25 @@ gLegLandmarks(
   msg = T
 )
 }
+\arguments{
+\item{leg_coords}{numerical matrix or dataframe or list of those types.
+leg points coordinates}
+
+\item{insertion}{numerical matrix or dataframe or list of those types.
+insertion points coordinates}
+
+\item{inser_thresh}{Numerical value in range 0:1 for threshold to remove
+angular points too close to the leg insertion points
+(value as fraction of half contour length)}
+
+\item{tresh_ankle}{Numerical value in range 0:1 for threshold to detect if
+the difference between the two knee-ankle distances is realistically acceptable
+(value as fraction of half contour length)}
+
+\item{viz}{logical. visualization option}
+
+\item{msg}{logical. message option}
+}
 \description{
 Ankle and knee position using angle along the contour of the leg,
 oriented with the body insertion point

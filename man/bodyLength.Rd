@@ -6,6 +6,10 @@
 \usage{
 bodyLength(body_points)
 }
+\arguments{
+\item{body_points}{a dataframe or matrix of body points coordinates}
+}
 \description{
 Body length from body points
 }
+\keyword{internal}

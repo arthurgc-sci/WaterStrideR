@@ -6,6 +6,13 @@
 \usage{
 f_prime(x, GMM_df)
 }
+\arguments{
+\item{x}{A numeric vector. The input values for which
+the derivative of the Gaussian Mixture Model is to be computed.}
+
+\item{GMM_df}{dataframe ($df) output of GMM()}
+}
 \description{
 Accesory function for GMMdRoots : creates derivative function of GMM
 }
+\keyword{internal}

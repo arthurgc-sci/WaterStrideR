@@ -6,6 +6,10 @@
 \usage{
 major_axis_angle(outline)
 }
+\arguments{
+\item{outline}{matrix or dataframe of points coordinates}
+}
 \description{
 Find major axis angle using PCA on outline
 }
+\keyword{internal}

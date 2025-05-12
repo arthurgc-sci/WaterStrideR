@@ -6,6 +6,9 @@
 \usage{
 gSplitLegMeasures(leg_list)
 }
+\arguments{
+\item{leg_list}{output of gMeasureLeg()}
+}
 \description{
 Re-format output of gMeasureLeg for easy inclusion in dataframe
 }

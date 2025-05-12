@@ -9,6 +9,9 @@ loadLDA(model_name)
 \arguments{
 \item{model_name}{a string corresponding to the name of the model}
 }
+\value{
+A fitted LDA model (object of class \code{lda})
+}
 \description{
 Load LDA model for package
 }

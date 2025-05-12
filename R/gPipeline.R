@@ -8,9 +8,14 @@
 #' @param img_path image path
 #' @param write_output logical, to save metrics as csv and print image analysis diagnostic plots
 #' @param return_df logical, to return metrics in R
+#' @param single_write logical, writing method for gWritePipeline()
+#' @param thresh numerical value in range 0:1, global gray-value threshold
+#' for the initial binarization of the input image
 #' @param winged_names vector, two names for not-winged / winged individuals
+#'
 #' @export
-gPipeline <- function(img_path, write_output=T, return_df=T, single_write=T, thresh=0.8, winged_names=c(0,1)){
+gPipeline <- function(img_path, write_output=T, return_df=T,
+                      single_write=T, thresh=0.8, winged_names=c(0,1)){
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
@@ -140,7 +145,7 @@ gPipeline <- function(img_path, write_output=T, return_df=T, single_write=T, thr
 #' @param detection_plot whole image detection plot as created by gPipeline with write_output=T 
 #' @param df_out corresponding dataframe created by gPipeline
 #' @param dim_img dimensions of base image
-#' @param single_write method of writing
+#' @param single_write writing method
 #'  True : a directory is created for the current image, containing plots and dataframe
 #'  False : a single 'out' directory with all plots is created for the current directory
 #'  ,gMultiPipeline is supposed to take in charge the creation of the dataframe

@@ -11,6 +11,8 @@ scoresEFA(img_bin, ori_angle = rep(0, length(img_bin)), nb_h = 7, viz = F)
 
 \item{ori_angle}{a list of orientation angles of provided shapes}
 
+\item{nb_h}{a numerical integer. number of elliptuc fourier harmonics to compute}
+
 \item{viz}{visualization option, additionally returns 3 plots}
 }
 \description{

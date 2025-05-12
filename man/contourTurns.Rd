@@ -12,6 +12,20 @@ contourTurns(
   viz = 0
 )
 }
+\arguments{
+\item{coords}{numerical dataframe or list of dataframe. Ordered contour points coordinates}
+
+\item{search_w}{a numerical integer. Distance, in number of points of in the contour
+to compute angles from}
+
+\item{splines_df}{a numerical integer. spline's degrees of freedom
+for contour angle histogram smoothing}
+
+\item{angle_thresh}{a numerical. Angle value (in radians) under which
+inflection points will be dismissed}
+
+\item{viz}{logical. visualization option}
+}
 \description{
 Modified from fxLPJ.R / Peaks of angle contour for a givens search window, smoothed using splines
 }

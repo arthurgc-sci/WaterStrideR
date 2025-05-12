@@ -6,6 +6,11 @@
 \usage{
 dilBodies(body_img, body_length)
 }
+\arguments{
+\item{body_img}{Binary pixset or c.img of waterstrider body}
+
+\item{body_length}{A numerical for length of corresponding body}
+}
 \description{
 Body dilation proportionnal to body length
 }

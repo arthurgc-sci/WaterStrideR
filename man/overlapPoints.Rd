@@ -6,6 +6,15 @@
 \usage{
 overlapPoints(set_a, set_b, coords = T, index = T)
 }
+\arguments{
+\item{set_a}{a numerical matrix of 2D points}
+
+\item{set_b}{a numerical matrix of 2D points}
+
+\item{coords}{logical. to return numerical points coordinates}
+
+\item{index}{logical. to return point's index}
+}
 \description{
 With 2 lists of discrete 2D points : which points from set_a are in set_b
 }

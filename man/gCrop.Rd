@@ -6,6 +6,17 @@
 \usage{
 gCrop(base_img, centroids, sizes, viz = F, factor = 3.5)
 }
+\arguments{
+\item{base_img}{c.img. Base image suitable for waterstrider pipeline}
+
+\item{centroids}{list of xy vectors. Body centroids coordinates of individuals}
+
+\item{sizes}{list or vector. Body length of individuals}
+
+\item{viz}{logical. visualization option}
+
+\item{factor}{numerical. Numerical value for crop size relative to individual's body length}
+}
 \description{
 Square crop around individual gerris centroids from image base_img with a diameter of factor*size
 Base image must be imported with imager package, centroids and sizes must be lists of same length

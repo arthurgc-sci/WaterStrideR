@@ -69,6 +69,12 @@ cropPoints = function(list_points, list_size, scaling_factor=1){
 #' Base image must be imported with imager package, centroids and sizes must be lists of same length
 #' Returns a list of inverted grayscale cropped images
 #'
+#' @param base_img c.img. Base image suitable for waterstrider pipeline
+#' @param centroids list of xy vectors. Body centroids coordinates of individuals
+#' @param sizes list or vector. Body length of individuals
+#' @param viz logical. visualization option
+#' @param factor numerical. Numerical value for crop size relative to individual's body length
+#'
 #' @export
 gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
   #Error handling
@@ -108,6 +114,11 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
 #'
 #' Changes the values of given set of pixel coordinate body_lab_points to 0
 #' in an image base_img
+#'
+#' @param base_img c.img. Base image suitable for waterstrider pipeline
+#' @param body_lab_points a list of dataframes, a dataframe or a matrix
+#' of coordinates of individual's body points 
+#' @param viz logical.visualization option
 #'
 #' @export
 gNobody <- function(base_img, body_lab_points, viz=F){
@@ -209,7 +220,10 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=T){
 
 #' Crop individual's body using crop coordinates given by gCrop
 #'
-#'base_img : a single c.img / body_coords : list of body coordinates / crop_coords : list of 2x2 crop matrices
+#' @param base_img c.img. Base image suitable for waterstrider pipeline
+#' @param body_coords a list of body coordinates
+#' @param crop_coords a list of 2x2 crop matrices
+#'
 #' @export
 recropBodies <- function(body_coords, base_img, crop_coords){
   empty_base_img <- imager::imfill(dim = dim(base_img), val = 0) #create empty image with base image dimensions
@@ -225,6 +239,9 @@ recropBodies <- function(body_coords, base_img, crop_coords){
 
 #' Body dilation proportionnal to body length
 #'
+#' @param body_img Binary pixset or c.img of waterstrider body
+#' @param body_length A numerical for length of corresponding body
+#' 
 #' @export
 dilBodies <- function(body_img, body_length){
   kernels <- lapply(body_length, function(x){ #adaptative dilation kernel based on body length
@@ -242,6 +259,11 @@ dilBodies <- function(body_img, body_length){
 #'
 #' Orientation based on body points PCA, then antero-posterior point density, or appendages repartition
 #'
+#' @param body_coords list or single dataframe or matrix of body points coordinates
+#' @param intersection_coords list or single dataframe or matrix of 
+#' full individual and dilated body contour intersection coordinates
+#' @param diag a logical for output analysis diagnostic messages
+#' 
 #' @export
 gOrientation <- function(body_coords, intersection_coords, diag=F){
   if(is.list(body_coords) & is.list(intersection_coords)){
@@ -277,18 +299,31 @@ gOrientation <- function(body_coords, intersection_coords, diag=F){
 }
 
 
-#' Accessory logicals for boolSeqLim
-#'
+#' Accessory logical for boolSeqLim
+#' 
+#' @param x0 logical vector
+#' @param x1 logical vector
+#' @keywords internal
 bool_first <- function(x0,x1){
   if(x0==0 & x1==1){T} else {F}
 }
+
+#' Accessory logical for boolSeqLim
+#'
+#' @param x0 logical vector
+#' @param x1 logical vector
+#' @keywords internal
 bool_last <- function(x0,x1){
   if(x0==1 & x1==0){T} else {F}
 }
+
 #' Interval of all True/1 sequence in boolean vector
 #'
 #' Give matching index of first and last True values of sequences of True in v
-#'
+#' 
+#' @param v a vector of logical values
+#' @param circular a logical for prior assumption of circularity of v 
+#' 
 #' @export
 boolSeqLim <- function(v, circular = T){ #circular :
   l_v <- length(v)
@@ -313,6 +348,8 @@ boolSeqLim <- function(v, circular = T){ #circular :
 #' For v a boolean of intersection points in the contour, assume limb intersections as continuous sequences
 #' of intersection values in the contour. Compute first, last, and middle point of each sequence
 #'
+#' @param v a vector of logical values
+#'
 #' @export
 gLimbInter <- function(v){
   seq_lim <- boolSeqLim(v, circular=T)#Interval of all True/1 sequence in boolean vector
@@ -334,6 +371,12 @@ gLimbInter <- function(v){
 #' using head orientation angle ori_angle in radians and intersection between dilated body contour and full body
 #' as boolean, like $index output of  <-
 #'
+#' @param ori_angle Numerical value or vector of numericals
+#' for orientation angle of individuals in radians
+#' @param dil_contour list or single dilated body contour as ordered xy coordinates matrix or dataframe
+#' @param inter_index list or single vector of numericals for indexes of intersection points
+#' in corresponding dilated contour
+#' 
 #' @export
 gLegInsertion <- function(ori_angle, dil_contour, inter_index){
   if(is.list(dil_contour) & is.list(inter_index)){
@@ -414,6 +457,19 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' Ankle and knee position using angle along the contour of the leg,
 #' oriented with the body insertion point
 #'
+#' @param leg_coords numerical matrix or dataframe or list of those types.
+#' leg points coordinates
+#' @param insertion numerical matrix or dataframe or list of those types.
+#' insertion points coordinates
+#' @param inser_thresh Numerical value in range 0:1 for threshold to remove
+#' angular points too close to the leg insertion points 
+#' (value as fraction of half contour length)
+#' @param tresh_ankle Numerical value in range 0:1 for threshold to detect if
+#' the difference between the two knee-ankle distances is realistically acceptable 
+#' (value as fraction of half contour length)
+#' @param viz logical. visualization option
+#' @param msg logical. message option
+#' 
 #' @export
 gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0.12, viz=F, msg=T){
   if(is.null(insertion) | all(is.na(insertion)) | is.null(leg_coords) | all(is.na(leg_coords))){
@@ -539,6 +595,10 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
 #' As gLegLandmarks finds insertion point on dilated body, the insertion landmark is biased
 #' Given body as xy coords and landmarks as output of gLegLandmarks, corrects the insertion point
 #'
+#' @param body dataframe or matrix of body points coordinates 
+#' @param landmarks landmarks as output of gLegLandmarks()
+#' @param viz logical.visualization option
+#' 
 #' @export
 gConnectLeg <- function(body, landmarks, viz=F){
   #Vectorization assuming left/right inner nesting for landmarks
@@ -590,6 +650,8 @@ gConnectLeg <- function(body, landmarks, viz=F){
 #'
 #' Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg or gLegLandmarks
 #'
+#' @param landmarks landmarks as output of gLegLandmarks()
+#' @param scale a numerical value for conversion from pixels to micrometers
 #' @export
 gMeasureLeg <- function(landmarks, scale){
   if(landmarks[[1]] %>% is.list){
@@ -615,6 +677,20 @@ gMeasureLeg <- function(landmarks, scale){
 
 #' Individual plot for gPipeline
 #'
+#' Individual plot for gPipeline, designed to be used on lists of internal 
+#' variables of gPipepline()
+#'
+#' @param i index of the individual to plot in the list-format variables of gPipeline()
+#' @param full Similar to the internal variable of the same name in gPipeline()
+#' @param body Similar to the internal variable of the same name in gPipeline()
+#' @param cen Similar to the internal variable of the same name in gPipeline()
+#' @param dilcont Similar to the internal variable of the same name in gPipeline()
+#' @param ang Similar to the internal variable of the same name in gPipeline()
+#' @param legs Similar to the internal variable of the same name in gPipeline()
+#' @param leg_lm Similar to the internal variable of the same name in gPipeline()
+#' @param leg_size Similar to the internal variable of the same name in gPipeline()
+#' @param inser Similar to the internal variable of the same name in gPipeline()
+#' @param clean_base_path Similar to the internal variable of the same name in gPipeline()
 #' @export
 gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
                         leg_lm, leg_size, inser, clean_base_path){
@@ -695,6 +771,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
 
 #' Re-format output of gMeasureLeg for easy inclusion in dataframe
 #'
+#' @param leg_list output of gMeasureLeg()
 #' @export
 gSplitLegMeasures <- function(leg_list) {
   right_femur <- list()
@@ -733,6 +810,7 @@ gSplitLegMeasures <- function(leg_list) {
 #'
 #' @param img_bin a list of binary image or pixset with a single white object
 #' @param ori_angle a list of orientation angles of provided shapes
+#' @param nb_h a numerical integer. number of elliptuc fourier harmonics to compute
 #' @param viz visualization option, additionally returns 3 plots
 #' @export
 scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){

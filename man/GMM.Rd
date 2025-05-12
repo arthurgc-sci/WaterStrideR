@@ -6,6 +6,19 @@
 \usage{
 GMM(img_val, n = 1:9, keep_max = T, viz = F, n_noise_sd = 0)
 }
+\arguments{
+\item{img_val}{numerical gray values of an image}
+
+\item{n}{numerical integer in range 1:9. number 'G' of components of the GMM}
+
+\item{keep_max}{logical. to remove rightmost component and consequently
+adjust weights}
+
+\item{viz}{visualization option}
+
+\item{n_noise_sd}{numerical. standard deviation of normal noise to add
+to the data to help breaking plateaus in he data, not compatible with findPeaks()}
+}
 \description{
 returns the GMM model of a distribution as a numeric vector img_val and a dataframe of the parameters with possibility
 of removing the one with the highest mean. n integer vector of components to test

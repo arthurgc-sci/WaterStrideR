@@ -6,6 +6,11 @@
 \usage{
 gMeasureLeg(landmarks, scale)
 }
+\arguments{
+\item{landmarks}{landmarks as output of gLegLandmarks()}
+
+\item{scale}{a numerical value for conversion from pixels to micrometers}
+}
 \description{
 Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg or gLegLandmarks
 }

@@ -7,8 +7,9 @@
 make_disc_kernel(size)
 }
 \arguments{
-\item{size}{numeric value for disc size, will be rounded to the next odd number}
+\item{size}{numeric value for disc size, will be rounded to the next odd number*}
 }
 \description{
 Make Filled Disc Kernel matrix for morphological dilations or erosions
 }
+\keyword{internal}

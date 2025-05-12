@@ -6,6 +6,11 @@
 \usage{
 contourAngles(coords, search_w = 5)
 }
+\arguments{
+\item{coords}{dataframe or matrix of contour coordinates}
+
+\item{search_w}{numerical integer. Index of the next value to check in the contour}
+}
 \description{
 Contour angle for each point given a search window = index of the next value to check
 }

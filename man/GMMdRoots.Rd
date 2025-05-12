@@ -6,6 +6,15 @@
 \usage{
 GMMdRoots(GMM_df, y, viz = F, msg = T)
 }
+\arguments{
+\item{GMM_df}{dataframe ($df) output of GMM()}
+
+\item{y}{numerical value to find the roots of}
+
+\item{viz}{visualization option}
+
+\item{msg}{onsole pessage option}
+}
 \description{
 Give roots of y for the derivative of given GMM parameters as dataframe created with GMM function
 }

@@ -6,6 +6,13 @@
 \usage{
 GMMquant(gmm_model_df, q, viz = F)
 }
+\arguments{
+\item{gmm_model_df}{dataframe ($df) output of GMM()}
+
+\item{q}{numerical in range 0:1. quantile}
+
+\item{viz}{visualization option}
+}
 \description{
 Quantile off GMM model dataframe gmm_model_df from GMM function
 }

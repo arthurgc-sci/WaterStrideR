@@ -6,6 +6,9 @@
 \usage{
 simpleCont(img_bin)
 }
+\arguments{
+\item{img_bin}{a binary c.img}
+}
 \description{
 Simple contour coords of binary image
 }

@@ -6,6 +6,9 @@
 \usage{
 find_true_sequences(boolean_vector)
 }
+\arguments{
+\item{boolean_vector}{a vector of boolean values}
+}
 \description{
 Identify sequences of TRUE values in a cyclic boolean vector
 }

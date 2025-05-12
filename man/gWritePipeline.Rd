@@ -24,7 +24,7 @@ gWritePipeline(
 
 \item{dim_img}{dimensions of base image}
 
-\item{single_write}{method of writing
+\item{single_write}{writing method
 True : a directory is created for the current image, containing plots and dataframe
 False : a single 'out' directory with all plots is created for the current directory
 ,gMultiPipeline is supposed to take in charge the creation of the dataframe}

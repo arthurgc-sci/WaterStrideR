@@ -6,6 +6,11 @@
 \usage{
 angleV(u, v)
 }
+\arguments{
+\item{u}{a numerical vector of length 2}
+
+\item{v}{a numerical vector of length 2}
+}
 \description{
 Angle of vector
 }

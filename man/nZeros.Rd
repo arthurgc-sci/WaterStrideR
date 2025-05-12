@@ -6,6 +6,15 @@
 \usage{
 nZeros(text, zeros = 1)
 }
+\arguments{
+\item{text}{A string of characters. The text in which to count leading zeros.}
+
+\item{zeros}{An integer. The number of leading zeros to check for in the \code{text}. Default is 1.}
+}
+\value{
+The number of leading zeros in the string \code{text}.
+}
 \description{
 Accessory for redRulerScaler
 }
+\keyword{internal}

@@ -12,6 +12,19 @@ redRulerScale(
   msg = T
 )
 }
+\arguments{
+\item{img}{c.img or pixset. base image}
+
+\item{red_thresh}{required difference in intesity between red component
+and other components to detect the red ruler}
+
+\item{confidence_interval}{a numerical value in range 0:1.
+confidence interval value to build the error margin from}
+
+\item{viz}{logical. visualization option}
+
+\item{msg}{logical. console message option}
+}
 \description{
 Detect ruler as biggest red label,
 }

@@ -51,14 +51,20 @@ invert_grayscale <- function(img) {
 
 #' Euclidian distance between two points
 #'
+#' @param v1 numerical vector of length 2
+#' @param v2 numerical vector of length 2
+#' @keywords internal
 eu_dist <- function(v1, v2) {
   sqrt(sum((v1 - v2)^2))
 }
 
 #' Create directory
 #'
-#' Create directory if doesn't already exists
+#' Create directory if it doesn't already exists
 #'
+#' @param name a string. name and path of the directory to create
+#' @param msg logical. console message option  
+#' @keywords internal
 create_dir <- function(name, msg=T){
   if (!dir.exists(name)) {
     dir.create(name)
@@ -72,6 +78,8 @@ create_dir <- function(name, msg=T){
 #'
 #' Center baserd on outline centroid
 #'
+#' @param outline matrix or dataframe of points coordinates
+#' @keywords internal
 centerContour <- function(outline) {
   centroid <- colMeans(outline)  # Calculate centroid
   outline <- sweep(outline, 2, centroid)  # Subtract centroid from each point
@@ -82,6 +90,8 @@ centerContour <- function(outline) {
 #'
 #' Find major axis angle using PCA on outline
 #'
+#' @param outline matrix or dataframe of points coordinates
+#' @keywords internal
 major_axis_angle <- function(outline) {
   pca <- prcomp(outline)   #PCA to find major axis
   angle <- atan2(pca$rotation[2,1], pca$rotation[1,1])  #calculate rotation angle
@@ -90,6 +100,8 @@ major_axis_angle <- function(outline) {
 
 #' Identify sequences of TRUE values in a cyclic boolean vector
 #'
+#' @param boolean_vector a vector of boolean values
+#' @export
 find_true_sequences <- function(boolean_vector) {
   true_sequences <- list()
   in_sequence <- FALSE
@@ -113,6 +125,7 @@ find_true_sequences <- function(boolean_vector) {
 
 #' Norm of vector
 #'
+#' @param u a numerical vector of length 2
 #' @export
 normV <- function(u){ #2D vector norm
   sqrt(scalar(u,u))
@@ -120,6 +133,8 @@ normV <- function(u){ #2D vector norm
 
 #' Angle of vector
 #'
+#' @param u a numerical vector of length 2
+#' @param v a numerical vector of length 2
 #' @export
 angleV <- function(u, v){
   round(scalar(u,v)/(normV(u)*normV(v)),14) %>% acos
@@ -127,6 +142,9 @@ angleV <- function(u, v){
 
 #' Scalar product
 #'
+#' @param u a numerical vector of length 2
+#' @param v a numerical vector of length 2
+#' @keywords internal
 scalar <- function(u, v){
   if(length(u)==3){
     return(u[1]*v[1]+u[2]*v[2]+u[3]*v[3])
@@ -136,8 +154,10 @@ scalar <- function(u, v){
 }
 
 #' Contour angle for each point given a search window = index of the next value to check
+#' 
+#' @param coords dataframe or matrix of contour coordinates
+#' @param search_w numerical integer. Index of the next value to check in the contour 
 #' @export
-#'
 contourAngles <- function(coords, search_w = 5){
   angcont=c()
   lcont=nrow(coords)
@@ -152,6 +172,8 @@ contourAngles <- function(coords, search_w = 5){
 
 #' Body length from body points
 #'
+#' @param body_points a dataframe or matrix of body points coordinates
+#' @keywords internal
 bodyLength <- function(body_points){
   long_angle <- major_axis_angle(body_points) #elongation axis angle of the body
   proj_body <- body_points[,1]*cos(long_angle) + body_points[,2]*sin(long_angle) #coordinates on this axis
@@ -163,7 +185,9 @@ bodyLength <- function(body_points){
 #'
 #'Load image from given path, negative filter, illumination correction filter, binarization based on threshold
 #'
-#' @export
+#' @param img_path a string. path to the base image  
+#' @param threshold a numerical in range 0:1 for binarization threshold 
+#' @export 
 binaryLoad <- function(img_path, threshold){
   img_pix <- imager::load.image(img_path) #load image with imager
   img_gr <- imager::grayscale(img_pix) #in b/w
@@ -177,6 +201,10 @@ binaryLoad <- function(img_path, threshold){
 
 #' Accessory for redRulerScaler
 #'
+#' @param text A string of characters. The text in which to count leading zeros.
+#' @param zeros An integer. The number of leading zeros to check for in the `text`. Default is 1.
+#' @return The number of leading zeros in the string `text`.
+#' @keywords internal
 nZeros <- function(text, zeros=1){
   if(substr(text, zeros, zeros) == 0){
     return( nZeros(text = text,
@@ -187,7 +215,14 @@ nZeros <- function(text, zeros=1){
 #'Get scale using detection of red millimeter paper
 #'
 #' Detect ruler as biggest red label,
-#'
+#' 
+#' @param img c.img or pixset. base image
+#' @param red_thresh required difference in intesity between red component
+#' and other components to detect the red ruler
+#' @param confidence_interval a numerical value in range 0:1.
+#' confidence interval value to build the error margin from
+#' @param viz logical. visualization option
+#' @param msg logical. console message option
 #' @export
 redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F, msg=T){
   # Get ruler as the biggest set of red pixels from the image
@@ -255,7 +290,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
     e_subp <- gsub("\\.", "", e_same_exp)
     n_zeros <- nZeros(e_subp)
     e_margin_format <- paste0("0.", substring(e_subp, 2, n_zeros+1), "e-0", abs(exp_main))
-    cat('1 µm =', format(unit_dist_mean , scientific=T, digits=3),
+    cat('1 \u00b5m =', format(unit_dist_mean , scientific=T, digits=3), #unicode for characters
         "\u00B1", e_margin_format,'px \n')
   }
   return(c("scale" = unit_dist_mean, "error" = e_margin))
@@ -267,6 +302,13 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
 #' of removing the one with the highest mean. n integer vector of components to test
 #' if n length > 1 : the number of components will be decided using BIC
 #'
+#' @param img_val numerical gray values of an image
+#' @param n numerical integer in range 1:9. number 'G' of components of the GMM
+#' @param keep_max logical. to remove rightmost component and consequently
+#' adjust weights
+#' @param viz visualization option
+#' @param n_noise_sd numerical. standard deviation of normal noise to add
+#' to the data to help breaking plateaus in he data, not compatible with findPeaks() 
 #' @export
 GMM <- function(img_val, n=1:9, keep_max=T, viz=F, n_noise_sd=0){
   if(imager::is.cimg(img_val)){
@@ -304,6 +346,9 @@ GMM <- function(img_val, n=1:9, keep_max=T, viz=F, n_noise_sd=0){
 
 #' Quantile off GMM model dataframe gmm_model_df from GMM function
 #'
+#' @param gmm_model_df dataframe ($df) output of GMM()
+#' @param q numerical in range 0:1. quantile
+#' @param viz visualization option
 #' @export
 GMMquant <- function(gmm_model_df, q, viz=F){
   f <- function(x){
@@ -336,6 +381,10 @@ GMMquant <- function(gmm_model_df, q, viz=F){
 #'
 #' Give roots of y for the derivative of given GMM parameters as dataframe created with GMM function
 #'
+#' @param GMM_df dataframe ($df) output of GMM()
+#' @param y numerical value to find the roots of
+#' @param viz visualization option
+#' @param msg onsole pessage option
 #' @export
 GMMdRoots=function(GMM_df, y, viz=F, msg=T){
   if(!is.numeric(y)) stop("y must be a numeric value") #error handling
@@ -354,8 +403,13 @@ GMMdRoots=function(GMM_df, y, viz=F, msg=T){
   if(length(roots)==0 && msg) message("Failed to find any solutions")
   return(roots)
 }
+
 #' Accesory function for GMMdRoots : creates derivative function of GMM
 #'
+#' @param x A numeric vector. The input values for which 
+#' the derivative of the Gaussian Mixture Model is to be computed.
+#' @param GMM_df dataframe ($df) output of GMM()
+#' @keywords internal
 f_prime <- function(x, GMM_df){
   sapply(x, function(xi){ # !!! VECTORIZATION !!!
     apply(GMM_df, 1, function(df){
@@ -369,6 +423,9 @@ f_prime <- function(x, GMM_df){
 
 #' Convert xy coordinates dataset as square c.img with padding
 #'
+#' @param coords matrix or dataframe of numerical coordinates
+#' @param padding numerical integer of padding to add to the crop
+#' @param return_offset logical. to also return offset value of recrop
 #' @export
 coordsAsImg <- function(coords, padding=0, return_offset=F){
   coords <- coords %>% as.matrix #avoid issues related to dataframe format, considered as a type of list
@@ -391,6 +448,7 @@ coordsAsImg <- function(coords, padding=0, return_offset=F){
 
 #' Image '1' values as xy coordinates
 #'
+#' @param img a pixet or c.img image
 #' @export
 imgAsCoords <- function(img){
   if(is.list(img)){
@@ -402,6 +460,8 @@ imgAsCoords <- function(img){
 
 #' Convert xy coordinates as linear index in given c.img
 #'
+#' @param img a c.img
+#' @param coords matrix or dataframe of numerical coordinates
 #' @export
 coordsToLinear <- function(coords, img){
   return((coords[,2]-1) * imager::width(img) + coords[,1])
@@ -413,6 +473,9 @@ coordsToLinear <- function(coords, img){
 #' Square closing then closing of size kernel_size on body coordinates body_lab_points
 #' Returns either coordinates as_coord, or an image c.img
 #'
+#' @param body_lab_points body points as numerical matrix or dataframe
+#' @param kernel_size numerical integer. closing and opening kernel size in pixels
+#' @param as_coords logical. to return
 #' @export
 cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
   if(!is.list(body_lab_points)){
@@ -436,6 +499,7 @@ cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
 
 #' Simple contour coords of binary image
 #'
+#' @param img_bin a binary c.img
 #' @export
 simpleCont <- function(img_bin){
   if(is.list(img_bin)){
@@ -451,12 +515,16 @@ simpleCont <- function(img_bin){
 
 #' With 2 lists of discrete 2D points : which points from set_a are in set_b
 #'
+#' @param set_a a numerical matrix of 2D points
+#' @param set_b a numerical matrix of 2D points
+#' @param coords logical. to return numerical points coordinates
+#' @param index logical. to return point's index
 #' @export
 overlapPoints <- function(set_a, set_b, coords=T, index=T){
   set_a <- set_a %>% as.matrix
   set_b <- set_b %>% as.matrix
-  ptInPts <- function(pt, coords){
-    which(pt[1] == coords[,1] & pt[2] == coords[,2]) #2D vector both equal
+  ptInPts <- function(pt, crds){
+    which(pt[1] == crds[,1] & pt[2] == crds[,2]) #2D vector both equal
   }
   if(is.list(set_a) & is.list(set_b)){ #vectorization
     res <- mapply(overlapPoints, set_a, set_b, SIMPLIFY = FALSE)
@@ -468,7 +536,7 @@ overlapPoints <- function(set_a, set_b, coords=T, index=T){
   if(length(set_b)==2) {
     set_b <- matrix(set_b, ncol = 2, byrow = TRUE)
   }
-  interID <- apply(set_b, 1, ptInPts, coords=set_a) %>% unlist
+  interID <- apply(set_b, 1, ptInPts, crds=set_a) %>% unlist
   inter <- 1:nrow(set_a) %in% interID
   if(index && coords){
     return(list("coords"=set_a[inter,], "index"=inter))
@@ -483,6 +551,14 @@ overlapPoints <- function(set_a, set_b, coords=T, index=T){
 #'
 #' Modified from fxLPJ.R / Peaks of angle contour for a givens search window, smoothed using splines
 #'
+#' @param coords numerical dataframe or list of dataframe. Ordered contour points coordinates
+#' @param search_w a numerical integer. Distance, in number of points of in the contour
+#' to compute angles from
+#' @param splines_df a numerical integer. spline's degrees of freedom
+#' for contour angle histogram smoothing
+#' @param angle_thresh a numerical. Angle value (in radians) under which 
+#' inflection points will be dismissed 
+#' @param viz logical. visualization option
 #' @export
 contourTurns <- function(coords, search_w=5, splines_df=30, angle_thresh=0.15, viz=0){
   if(is.list(coords) & !is.data.frame(coords)){ #Vectorization
@@ -503,7 +579,7 @@ contourTurns <- function(coords, search_w=5, splines_df=30, angle_thresh=0.15, v
     angcont <- c(angcont, var)
   }
   index <- seq(1, lcont)
-  m_index <- c(index-max(index), index, index+max(index)) #on met bout a bout 3 fois la sequence
+  m_index <- c(index-max(index), index, index+max(index)) #on met bout à bout 3 fois la sequence
   m_angcont <- rep(angcont, 3)
   #splines and max
   splines_df_3 <- splines_df*3
@@ -575,7 +651,8 @@ spikePlateau <- function(v, increment = 1e-5){
 #'
 #' Make Filled Disc Kernel matrix for morphological dilations or erosions
 #' 
-#' @param size numeric value for disc size, will be rounded to the next odd number
+#' @param size numeric value for disc size, will be rounded to the next odd number*
+#' @keywords internal
 make_disc_kernel <- function(size) {
   size <- ifelse(size %% 2 == 0, size + 1, size)
   radius <- floor(size / 2) + 0.5

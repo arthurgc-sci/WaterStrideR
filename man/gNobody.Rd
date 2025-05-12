@@ -6,6 +6,14 @@
 \usage{
 gNobody(base_img, body_lab_points, viz = F)
 }
+\arguments{
+\item{base_img}{c.img. Base image suitable for waterstrider pipeline}
+
+\item{body_lab_points}{a list of dataframes, a dataframe or a matrix
+of coordinates of individual's body points}
+
+\item{viz}{logical.visualization option}
+}
 \description{
 Changes the values of given set of pixel coordinate body_lab_points to 0
 in an image base_img

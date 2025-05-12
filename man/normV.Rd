@@ -6,6 +6,9 @@
 \usage{
 normV(u)
 }
+\arguments{
+\item{u}{a numerical vector of length 2}
+}
 \description{
 Norm of vector
 }

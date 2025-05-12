@@ -6,6 +6,11 @@
 \usage{
 coordsToLinear(coords, img)
 }
+\arguments{
+\item{coords}{matrix or dataframe of numerical coordinates}
+
+\item{img}{a c.img}
+}
 \description{
 Convert xy coordinates as linear index in given c.img
 }

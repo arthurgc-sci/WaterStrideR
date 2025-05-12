@@ -6,6 +6,12 @@
 \usage{
 create_dir(name, msg = T)
 }
-\description{
-Create directory if doesn't already exists
+\arguments{
+\item{name}{a string. name and path of the directory to create}
+
+\item{msg}{logical. console message option}
 }
+\description{
+Create directory if it doesn't already exists
+}
+\keyword{internal}

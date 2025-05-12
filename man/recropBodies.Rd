@@ -6,6 +6,13 @@
 \usage{
 recropBodies(body_coords, base_img, crop_coords)
 }
+\arguments{
+\item{body_coords}{a list of body coordinates}
+
+\item{base_img}{c.img. Base image suitable for waterstrider pipeline}
+
+\item{crop_coords}{a list of 2x2 crop matrices}
+}
 \description{
-base_img : a single c.img / body_coords : list of body coordinates / crop_coords : list of 2x2 crop matrices
+Crop individual's body using crop coordinates given by gCrop
 }

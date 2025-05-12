@@ -6,6 +6,10 @@
 \usage{
 centerContour(outline)
 }
+\arguments{
+\item{outline}{matrix or dataframe of points coordinates}
+}
 \description{
 Center baserd on outline centroid
 }
+\keyword{internal}
