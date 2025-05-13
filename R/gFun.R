@@ -570,8 +570,8 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
       points(x = c(0,sum(dist)), y = c(1,1), col = "blue",pch=16)
       points(x = dist_peaks_rev, y = rep(0.9,n_p), pch = 16,
              ylim = c(0.5,1.5), xlim = c(0,sum(dist)))
-      abline(v = sum(dist)/2*thresh, col = "blue")
-      legend("bottomright", legend = c(paste("thresh",thresh),"mid leg"),
+      abline(v = sum(dist)/2*inser_thresh, col = "blue")
+      legend("bottomright", legend = c(paste("thresh",inser_thresh),"mid leg"),
              col = c("blue",1), lty = 1, bty = "n")
       #P2 Contour reordered around insertion point + inflexion points
       plot(rbind(cont_inser,cont_inser[1,]), type="l", as=1,
