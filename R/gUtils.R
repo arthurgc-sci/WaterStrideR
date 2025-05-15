@@ -12,6 +12,7 @@
 #' @importFrom stats dnorm lm median pnorm prcomp predict qnorm rnorm sd uniroot
 #' @importFrom utils stack write.table
 #' @importFrom imager %inr%
+#' @import MASS
 #'
 #' @param img an imager::cimg
 #' @param nsamples an integer, pixel subsampling value.

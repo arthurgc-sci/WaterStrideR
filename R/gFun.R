@@ -91,7 +91,7 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
     yrange <- crop_pt_df[,2]
     crop <- imager::imsub(base_img, x %inr% xrange, y %inr% yrange)
     crop[which(crop==1)] <- max(crop[which(crop!=1)])
-    out <- crop %>% imager::grayscale %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
+    out <- crop %>% imager::grayscale() %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
     pb$tick()
     return(out)
   })
@@ -433,7 +433,7 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
     return(res)
   }
     # find limbs
-  limbs <- ((dilated_body - gerris) < 0) %>% imager::as.cimg #full individual minus dilated body
+  limbs <- ((dilated_body - gerris) < 0) %>% imager::as.cimg() #full individual minus dilated body
   limbs[coordsToLinear(intersection_coords, limbs)] <- 1 #reattach intersections with body, required for detection
   split_limbs <- lapply((imager::split_connected(limbs)), imgAsCoords) #list xy coords of separated limbs
     # get leg points
@@ -836,13 +836,13 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
   rot_cont <- mapply(function(c, m){ c %*% m }, body_cont_mat, ang_mat) #rotate
   cent_cont <- lapply(rot_cont ,centerContour) #center
   outs <- Momocs::Out(cent_cont) #outline Momocs object
-  scale_cont <- outs %>% Momocs::coo_scale #scale
+  scale_cont <- outs %>% Momocs::coo_scale() #scale
   efa <- scale_cont %>% Momocs::efourier(nb.h=nb_h, norm=T) #elliptic fourier analysis
   efa_pca <- prcomp(efa$coe) #principal components analysis
   if(viz){ #visualization
     par(mfrow=c(1,1))
     scale_cont %>% stack #outlines superposition
-    scale_cont %>% Momocs::panel #all outlines
+    scale_cont %>% Momocs::panel() #all outlines
     scale_cont %>% Momocs::calibrate_harmonicpower_efourier(nb.h=nb_h) #elliptic fourier calibration
     Momocs::plot_PCA(Momocs::PCA(efa))
   }
@@ -862,7 +862,7 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
 #' @param hPCA_scores harmonic fourier principal components as output of prcomp
 #' @export
 gPredictLDA <- function(LDA_model, hPCA_scores){
-  if(class(LDA_model) != "lda") stop("LDA_model should be an object of class lda")
+  if(!inherits(LDA_model, "lda")) stop("LDA_model should be an object of class lda")
 
   valid_bool <- !(hPCA_scores[,1] %>% is.na) #non NA rows
   valid_hPCA <- hPCA_scores[valid_bool,] #na.omit(hPCA)
