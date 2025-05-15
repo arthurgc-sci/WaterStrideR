@@ -13,6 +13,7 @@
 #' @importFrom utils stack write.table
 #' @importFrom imager %inr%
 #' @import MASS
+#' @importFrom mclust Mclust
 #'
 #' @param img an imager::cimg
 #' @param nsamples an integer, pixel subsampling value.
@@ -318,7 +319,7 @@ GMM <- function(img_val, n=1:9, keep_max=T, viz=F, n_noise_sd=0){
   if(n_noise_sd != 0){
     img_val <- img_val + rnorm(length(img_val), mean=0, sd=n_noise_sd) #normal noise to cope with image discrete gray values
   }
-  mod <- mclust::Mclust(img_val, modelNames="V", G=n, verbose=F) #fit model on cropped removed_body noised data
+  mod <- Mclust(img_val, modelNames="V", G=n, verbose=F) #fit model on cropped removed_body noised data
   df_mod <- data.frame(mod$parameters$mean,
                        sqrt(mod$parameters$variance$sigmasq), #relevant parameters as dataframe
                        mod$parameters$pro)
