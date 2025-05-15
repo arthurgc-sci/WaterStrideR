@@ -13,7 +13,7 @@
 #' @importFrom utils stack write.table
 #' @importFrom imager %inr%
 #' @import MASS
-#' @importFrom mclust Mclust
+#' @importFrom mclust Mclust mclustBIC
 #'
 #' @param img an imager::cimg
 #' @param nsamples an integer, pixel subsampling value.
