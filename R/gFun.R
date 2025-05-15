@@ -244,14 +244,18 @@ recropBodies <- function(body_coords, base_img, crop_coords){
 #' 
 #' @export
 dilBodies <- function(body_img, body_length){
-  kernels <- lapply(body_length, function(x){ #adaptative dilation kernel based on body length
-    size <- round(x * 1.3 - x + 1)
-    size <- ifelse(size %% 2 == 0, size + 1, size)  # Round to an odd number to avoid warnings in makeBrush
-    make_disc_kernel(size)
-  })
-  dil_body <- mapply(function(crop, kern){
-    imager::dilate(crop, mask = kern) #TODO TO TEST, REPLACED EBI
-  }, body_img, kernels) #dilation around body to ensure intersecting legs and not the body
+  if(!is.pixset(body_img) && !(imager::is.cimg(body_img))){ #check type 
+    if(is.list(body_length) | is.vector(body_length)){
+      res <- mapply(dilBodies, body_img, body_length, SIMPLIFY = F) #vectorization
+      return(res)
+    } else {
+      stop("Wrong formats for body_img or body_length in dilBodies()")
+    }
+  }
+  size0 <- round(body_length * 1.3 - body_length + 1)  #adaptative dilation kernel based on body length
+  size <- ifelse(size0 %% 2 == 0, size0 + 1, size0)  # Round to an odd number to avoid warnings in makeBrush
+  kernel <- size %>% make_disc_kernel %>% imager::as.cimg() #create disc kernel suitable for imager based on size
+  dil_body <- body_img %>% imager::dilate(mask = kernel) #dilation around body to ensure intersecting legs and not the body
   return(dil_body)
 }
 
