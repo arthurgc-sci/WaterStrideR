@@ -250,7 +250,7 @@ dilBodies <- function(body_img, body_length){
     make_disc_kernel(size)
   })
   dil_body <- mapply(function(crop, kern){
-    imager::dilate(crop, kern=kern) #TODO TO TEST, REPLACED EBI
+    imager::dilate(crop, mask = kern) #TODO TO TEST, REPLACED EBI
   }, body_img, kernels) #dilation around body to ensure intersecting legs and not the body
   return(dil_body)
 }
