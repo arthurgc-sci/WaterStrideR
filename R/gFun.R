@@ -424,7 +424,6 @@ gLegInsertion <- function(ori_angle, dil_contour, inter_index){
 #' @param dilated_body `cimg` or list of `cimg`
 #' @param intersection_coords `x,y` matrix or list of `x,y` matrices
 #' @param insertions `x,y` matrix or list of `x,y` matrices
-#'
 #' @export
 gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
   if(all(is.na(gerris))) return(list(right=NA, left=NA))
@@ -439,7 +438,8 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
     # find limbs
   limbs <- ((dilated_body - gerris) < 0) %>% imager::as.cimg() #full individual minus dilated body
   limbs[coordsToLinear(intersection_coords, limbs)] <- 1 #reattach intersections with body, required for detection
-  split_limbs <- lapply((imager::split_connected(limbs)), imgAsCoords) #list xy coords of separated limbs
+  split_limbs_img <- limbs %>% imager::split_connected() #images of separated limbs
+  split_limbs <- lapply(split_limbs_img, imgAsCoords) #as xy coords 
     # get leg points
   leg_split_id <- lapply(insertions, function(inser){ #for each hind leg insertion point :
     tryCatch({
@@ -476,7 +476,8 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' 
 #' @export
 gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0.12, viz=F, msg=T){
-  if(is.null(insertion) | all(is.na(insertion)) | is.null(leg_coords) | all(is.na(leg_coords))){
+  if(is.null(insertion) | all(is.na(insertion)) |
+     is.null(leg_coords) | all(is.na(leg_coords)) | length(leg_coords)==2){
     return(NA)
   } #Na handling
   if(!("dim1" %in% names(insertion))){  #Vectorization assuming nesting "left" "right" structure
@@ -729,7 +730,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
   }
   #legs
   lapply(legs[[i]], function(x){
-    if(!anyNA(x) && nrow(x) > 0) {  # Only draw if valid
+    if(!anyNA(x) && length(x) != 2) {  # Only draw if valid
       symbols(x[,1], x[,2],
               squares = rep(1, nrow(x)),
               inches = FALSE, add = TRUE, fg = NA, bg = "gray15")

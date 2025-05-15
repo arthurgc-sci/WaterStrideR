@@ -430,7 +430,13 @@ f_prime <- function(x, GMM_df){
 #' @param return_offset logical. to also return offset value of recrop
 #' @export
 coordsAsImg <- function(coords, padding=0, return_offset=F){
+  #safety
   coords <- coords %>% as.matrix #avoid issues related to dataframe format, considered as a type of list
+  if(length(coords)==2){  #single points, no point in creating an image
+    warning("coordsAsImg not implemented for single point, returning NA")
+    return(NA)
+  }
+  #
   xy_range <- apply(coords, 2, range) #max and min values of coords
   max_range <- apply(xy_range, 2, diff) %>% max + 2*padding #longest dimensional span (x or y) + padding
   xy_mid <- apply(xy_range, 2, mean) #middle of coords to center the new image
