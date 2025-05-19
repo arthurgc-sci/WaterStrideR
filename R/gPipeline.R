@@ -100,16 +100,16 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   leg_res <- gSplitLegMeasures(leg_size)
   df_out <- data.frame(image =  rep(clean_base_path, length(body_lab_points)),
                        i = seq_along(body_lab_points),
-                       L_body = body_length,
+                       L_body = body_length %>% round,
                        error_margin = error_margin,
-                       left_tibia = leg_res$right_tibia,#inverting left/right due to error
-                       right_tibia = leg_res$left_tibia,
-                       left_femur = leg_res$right_femur,
-                       right_femur = leg_res$left_femur,
+                       left_tibia = leg_res$right_tibia %>% round,#inverting left/right due to error
+                       right_tibia = leg_res$left_tibia %>% round,
+                       left_femur = leg_res$right_femur %>% round,
+                       right_femur = leg_res$left_femur %>% round,
                        sex = sex_prediction$class,
                        F_proba = sex_prediction$posterior[,'F'],
                        winged = wing_prediction$class,
-                       w_proba = wing_prediction$posterior[,winged_names[2]])
+                       w_proba = 1-wing_prediction$posterior[,winged_names[2]])
   
   if(write_output){
     # Detection plot of the image
