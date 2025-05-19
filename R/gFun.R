@@ -640,7 +640,7 @@ gConnectLeg <- function(body, landmarks, viz=F){
     lines(landmarks, col=1, lwd=4)
     points(new_ins[1], new_ins[2], pch=16, col="maroon", cex=2)
     lines(rbind(new_ins, landmarks[1,]), col="maroon", lwd=4)
-    legend("bottomright", legend = "Extended Leg", col = "maroon", lwd = 4)
+    legend("bottomleft", legend = "Extended Leg", col = "maroon", lwd = 4)
   }
   #output
   if(iterations==100){ #leg not connecting : most likely a landmarking error
@@ -706,7 +706,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
   if(!anyNA(full[[i]])){
     plot(NA,  #empty plot
          xlim = range(full_coords[,1]) + c(-5,5),  # Added padding of 5 units
-         ylim = range(full_coords[,2]) + c(-5,5),  # Added padding of 5 units
+         ylim = (range(full_coords[,2]) + c(-5,5)) %>% rev,  #invert y to match image format
          asp = 1, xlab = "", ylab = "")
     symbols(full_coords[,1], full_coords[,2], #full binarization
             squares = rep(1, nrow(full_coords)),
@@ -739,23 +739,27 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
   #leg landmarks
   mapply(function(x, size){ #for each side
     if(!anyNA(x) && nrow(x) > 0) {  # Only process if valid
-      for(i in c(1,3)){
-        pt <- x[(i+1)%%3+1, ]
+      pal <- c("coral","coral3")
+      pal0 <- c(pal[1], 0, pal[2])
+      for(j in c(1,3)){ #i is already used in the function
+        pt <- x[(j+1)%%3+1, ]
         if(!anyNA(pt)) {  # Check if point is valid
-          points(pt[1], pt[2], pch = 16, col = c("coral3",0,"coral")[i])
-          lines(x[-i,], col = c("coral3",0,"coral")[i], lwd = 2, lty = 1)
-          ix <- i
+          points(pt[1], pt[2], pch = 16, col = pal0[j])
+          lines(x[-j,], col = pal0[j], lwd = 2, lty = 1)
+          ix <- j%%3+1
+          print(j)
           if(ix==3){ix <- 2}
-          size <- round(size, 1)
+          size <- round(size)
           off <- 0.2
           ft <- 11
           colo <- "#000000E6" #E6 is for transparency
           posi <- 2
-          text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi)
+          text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi) #dark outline
           text(x=pt[1]+off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)
           text(x=pt[1]-off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)
           text(x=pt[1]+off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi)
-          text(x=pt[1], y=pt[2], font=11, labels=size[ix], col=c("coral3","coral")[ix], pos=posi)
+          text(x=pt[1], y=pt[2], font=11, labels=size[ix],
+               col=pal[ix], pos=posi)
         }
       }
     }
