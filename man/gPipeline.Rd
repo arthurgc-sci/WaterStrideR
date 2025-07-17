@@ -10,7 +10,8 @@ gPipeline(
   return_df = T,
   single_write = T,
   thresh = 0.8,
-  winged_names = c(0, 1)
+  winged_names = c(0, 1),
+  auto_scale = T
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ gPipeline(
 for the initial binarization of the input image}
 
 \item{winged_names}{vector, two names for not-winged / winged individuals}
+
+\item{auto_scale}{a boolean. If 'TRUE' : red ruler based scale}
 }
 \description{
 Finds individual's size, sex, presence of wing, tibia and femur length

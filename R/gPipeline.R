@@ -12,10 +12,12 @@
 #' @param thresh numerical value in range 0:1, global gray-value threshold
 #' for the initial binarization of the input image
 #' @param winged_names vector, two names for not-winged / winged individuals
+#' @param auto_scale a boolean. If 'TRUE' : red ruler based scale
 #'
 #' @export
 gPipeline <- function(img_path, write_output=T, return_df=T,
-                      single_write=T, thresh=0.8, winged_names=c(0,1)){
+                      single_write=T, thresh=0.8, winged_names=c(0,1),
+                      auto_scale=T){
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
@@ -29,7 +31,7 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   })
   message("| \n2 - Computing scale")
   #Scale
-  scale <- redRulerScale(base_img, msg=F) #get scale
+  scale <- pipelineScale(base_img, auto_scale) #get scale
   message("| \n3 - Computing body")
   body_length <- body_length_pix/scale[1] #conversion in mm
   error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
@@ -190,8 +192,12 @@ gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, s
 #'
 #' @param img_path_list a vector or list or valid image paths
 #' @param return_df logical, to return the concatenated gPipeline dataframe
+#' @param ... Additional arguments passed to `gPipeline()`
+#' 
+#' @return A list of results returned by `gPipeline()`.
+#' @seealso [gPipeline()]
 #' @export
-gMultiPipeline <- function(img_path_list, return_df){
+gMultiPipeline <- function(img_path_list, return_df, ...){
   img_path_length <- length(img_path_list)
   df_out_list <- list()
   message(paste0("Running pipeline for ", img_path_length, " images \n_____________________________"))
@@ -202,7 +208,8 @@ gMultiPipeline <- function(img_path_list, return_df){
     df_out_list[[clean_base_path]] <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
               write_output=T,
               return_df=T, #return dataframe of each image analysis
-              single_write=F) #writing format for whole directory
+              single_write=F, #writing format for whole directory
+              ...) #gPipeline arguments
   }
   #create and save dataframe
   multi_df_out <- do.call(rbind, df_out_list)
@@ -222,15 +229,19 @@ gMultiPipeline <- function(img_path_list, return_df){
 #'
 #' @param img_path image path or vector of image paths to analyze 
 #' @param return_df logical to return the output dataframe
+#' @param ... Additional arguments passed to `gPipeline()`
+#' 
+#' @return A list of results returned by `gPipeline()`.
+#' @seealso [gPipeline()]
 #' @export
-gRunPipeline <- function(img_path, return_df=T){
+gRunPipeline <- function(img_path, return_df=T, ...){
   #1 check if path is an image
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
   if( grepl(img_pattern, img_path, ignore.case = TRUE) ){ #if provided path is a single img path
     if( !file.exists(img_path) ){
       message(paste0("File ",img_path," appears to be an image but was not found in ", getwd()))
     } else {
-      gPipeline(img_path, return_df=return_df)
+      gPipeline(img_path, return_df=return_df, ...)
     }
   } else { #path is not an image, assuming a folder containing images
     if( !file.exists(img_path) ){ #invalid path
@@ -245,9 +256,9 @@ gRunPipeline <- function(img_path, return_df=T){
           message(paste0(img_path, " is a valid directory but does not contain any image"))
         } else if(llf==1){
           message("Running pipeline for the single image found in directory")
-          return(gPipeline(lf, return_df=return_df))
+          return(gPipeline(lf, return_df=return_df, ...))
         } else { #if multiple images are found in dir
-          gMultiPipeline(lf, return_df=return_df) 
+          gMultiPipeline(lf, return_df=return_df, ...) 
         }
       }
     }

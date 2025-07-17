@@ -4,14 +4,22 @@
 \alias{gRunPipeline}
 \title{Main method to run gPipeline for one or multiple images in the same directory}
 \usage{
-gRunPipeline(img_path, return_df = T)
+gRunPipeline(img_path, return_df = T, ...)
 }
 \arguments{
 \item{img_path}{image path or vector of image paths to analyze}
 
 \item{return_df}{logical to return the output dataframe}
+
+\item{...}{Additional arguments passed to \code{gPipeline()}}
+}
+\value{
+A list of results returned by \code{gPipeline()}.
 }
 \description{
 Checks if an input can be valid for either gPipline or gMultiPipeline,
 and use the appropriate function, or return a specific error message
+}
+\seealso{
+\code{\link[=gPipeline]{gPipeline()}}
 }
