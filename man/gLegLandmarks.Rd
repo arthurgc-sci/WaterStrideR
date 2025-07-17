@@ -10,7 +10,12 @@ gLegLandmarks(
   inser_thresh = 0.1,
   tresh_ankle = 0.12,
   viz = F,
-  msg = T
+  msg = T,
+  inflexion_pts_range = c(5, 7),
+  knee_diff_thresh = 0.2,
+  segment_length_range = c(0.15, 0.6),
+  n_splines = 30,
+  search_w = 6
 )
 }
 \arguments{
@@ -31,6 +36,17 @@ the difference between the two knee-ankle distances is realistically acceptable
 \item{viz}{logical. visualization option}
 
 \item{msg}{logical. message option}
+
+\item{inflexion_pts_range}{vector of two integers. Tolerated range of inflexion points on leg contour}
+
+\item{knee_diff_thresh}{numerical in \code{[0, 1]}. Minimal tolerated knee-ankle distance as ratio of half leg contour length}
+
+\item{segment_length_range}{vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
+as ratio of half leg contour distance}
+
+\item{n_splines}{an integer. Number of splines to fit leg contour angle variation}
+
+\item{search_w}{an integer. Distance (in number of points in contour) to use to compute leg contour angles}
 }
 \description{
 Ankle and knee position using angle along the contour of the leg,

@@ -4,7 +4,7 @@
 \alias{gCleanBin}
 \title{Clean individuals binary image}
 \usage{
-gCleanBin(l_img_bin, centroid, as_coords = T)
+gCleanBin(l_img_bin, centroid, as_coords = T, px_filter = 25)
 }
 \arguments{
 \item{l_img_bin}{An image as pixset or c.img or a list of images}
@@ -12,6 +12,8 @@ gCleanBin(l_img_bin, centroid, as_coords = T)
 \item{centroid}{Numeric xy coordinates of the body centroid, or a list body centroids}
 
 \item{as_coords}{A boolean}
+
+\item{px_filter}{A numerical. Minimum amount pixel to keep label}
 }
 \description{
 Removes components touching the edges except for the body + removes small spots

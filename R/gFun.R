@@ -140,44 +140,15 @@ gNobody <- function(base_img, body_lab_points, viz=F){
   return(im_rmb)
 }
 
-#' Binarize gerris using GMM derivative
-#'
-#' Binarize gerris by setting a fixed threshold per input image using GMM derivative
-#'
-#' @param gerris_crops c.img or list of c.img of cropped binary individuals
-#' @param nG number of gaussians to fit in GMM
-#' @param noise_n normal noise to add to histogram data, helps breaking plateaus
-#' @param y_root see gMMThresh
-#' @param msg logical for display of diagnostic messages
-#' @export
-gGMMThresh <- function(gerris_crops, nG=2, noise_n=0.005, y_root=-25, msg=T){
-  if(is.list(gerris_crops)){ #Vectorization
-    if(msg) message("GMM thresholding")
-    pb <- progress::progress_bar$new(total=length(gerris_crops))
-    res <- lapply(gerris_crops, function(x){
-      pb$tick()
-      gGMMThresh(x, nG, noise_n, y_root)
-    })
-    return(res)
-  }
-  g_val <- gerris_crops %>% as.numeric #convert cropped images to numeric
-  g_val_clean <- g_val[g_val!=0 & g_val!=1] #removes eventual extreme values created by gNobody
-  l_GMM <- GMM(img_val = g_val_clean, n = nG,
-               keep_max = F, n_noise_sd = noise_n) #Fit two weighted gaussians to slighlty noised data
-  thresh <- GMMdRoots(l_GMM$df, y = y_root, msg = F) #find roots of the GMM for y= -25 (a fixed slope)
-  if(length(thresh) == 0) return(NA)
-  binarized_gerris <- gerris_crops > max(thresh) #binarize using maximum solution of f'(x)
-  return( binarized_gerris )
-}
-
 #' Clean individuals binary image
 #'
 #' Removes components touching the edges except for the body + removes small spots
 #' @param l_img_bin An image as pixset or c.img or a list of images
 #' @param centroid Numeric xy coordinates of the body centroid, or a list body centroids
 #' @param as_coords A boolean
+#' @param px_filter A numerical. Minimum amount pixel to keep label 
 #' @export
-gCleanBin <- function(l_img_bin, centroid, as_coords=T){
+gCleanBin <- function(l_img_bin, centroid, as_coords=T, px_filter=25){
   if(!is.list(l_img_bin)){
     if(all(is.na(l_img_bin)) | all(is.na(centroid))) { return(NA) }
     if(!imager::is.cimg(l_img_bin) & !imager::is.pixset(l_img_bin)) {
@@ -211,7 +182,7 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=T){
   #3 Remove small spots
   unique_labs <- unique(labs)
   labs_val_r <- unique_labs[!(unique_labs %in% edge_labs_cen)]#remove edge contact
-  labs_val_rsp <- labs_val_r[sapply(labs_val_r, function(x) sum(labs==x)) > 25]
+  labs_val_rsp <- labs_val_r[sapply(labs_val_r, function(x) sum(labs==x)) >= px_filter]
   img_res <- imager::as.cimg(labs %in% labs_val_rsp, dim=c(dimX, dimY, 1, 1))
   if(as_coords){ img_res <- img_res %>% imgAsCoords }
 
@@ -241,9 +212,10 @@ recropBodies <- function(body_coords, base_img, crop_coords){
 #'
 #' @param body_img Binary pixset or c.img of waterstrider body
 #' @param body_length A numerical for length of corresponding body
+#' @param dilation_ratio Dilation kernel size as body length ratio
 #' 
 #' @export
-dilBodies <- function(body_img, body_length){
+dilBodies <- function(body_img, body_length, dilation_ratio=0.3){
   if(!imager::is.pixset(body_img) && !(imager::is.cimg(body_img))){ #check type 
     if(is.list(body_length) | is.vector(body_length)){
       res <- mapply(dilBodies, body_img, body_length, SIMPLIFY = F) #vectorization
@@ -252,7 +224,7 @@ dilBodies <- function(body_img, body_length){
       stop("Wrong formats for body_img or body_length in dilBodies()")
     }
   }
-  size0 <- round(body_length * 1.3 - body_length + 1)  #adaptative dilation kernel based on body length
+  size0 <- round(body_length * dilation_ratio + 1)  #adaptative dilation kernel based on body length
   size <- ifelse(size0 %% 2 == 0, size0 + 1, size0)  # Round to an odd number to avoid warnings in makeBrush
   kernel <- size %>% make_disc_kernel %>% imager::as.cimg() #create disc kernel suitable for imager based on size
   dil_body <- body_img %>% imager::dilate(mask = kernel) #dilation around body to ensure intersecting legs and not the body
@@ -380,9 +352,12 @@ gLimbInter <- function(v){
 #' @param dil_contour list or single dilated body contour as ordered xy coordinates matrix or dataframe
 #' @param inter_index list or single vector of numericals for indexes of intersection points
 #' in corresponding dilated contour
+#' @param leg_lim_ratio numeric vector of length two. Values between 0 and 1 to define range where
+#' legs are expected to be found as ratio of body elongation starting from the back (excluding head appendages and hind body part)
 #' 
 #' @export
-gLegInsertion <- function(ori_angle, dil_contour, inter_index){
+gLegInsertion <- function(ori_angle, dil_contour, inter_index,
+                          leg_lim_ratio=c(0.25, 0.6)){
   if(is.list(dil_contour) & is.list(inter_index)){
     res <- mapply(gLegInsertion, ori_angle, dil_contour, inter_index, SIMPLIFY=F)
     return(res)
@@ -401,7 +376,7 @@ gLegInsertion <- function(ori_angle, dil_contour, inter_index){
   #remove limbs insertion on rear-most first 25% of elongation (likely not legs)
   cont_r_min <- min(cont_r[,1])
   int_elong_ratio <- (limbs_base_r[,1]-cont_r_min)/(max(cont_r[,1])-cont_r_min) #normalized position of insertion in elongation direction
-  valid_limbs_id <- (int_elong_ratio > 0.25) & (int_elong_ratio < 0.6) #spacial constraint : no body and no antennas
+  valid_limbs_id <- (int_elong_ratio > leg_lim_ratio[1]) & (int_elong_ratio < leg_lim_ratio[2]) #spacial constraint : no body and no antennas
   #find anterior insertion for both sides
   left_limbs_id <- limbs_base_r[,2] > bary_r[,2] #under y=0 on barycenter reference : right side
   inser <- list()
@@ -473,9 +448,21 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' (value as fraction of half contour length)
 #' @param viz logical. visualization option
 #' @param msg logical. message option
+#' @param inflexion_pts_range vector of two integers. Tolerated range of inflexion points on leg contour
+#' @param knee_diff_thresh numerical in \code{[0, 1]}. Minimal tolerated knee-ankle distance as ratio of half leg contour length
+#' @param segment_length_range vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
+#' as ratio of half leg contour distance
+#' @param n_splines an integer. Number of splines to fit leg contour angle variation
+#' @param search_w an integer. Distance (in number of points in contour) to use to compute leg contour angles
 #' 
 #' @export
-gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0.12, viz=F, msg=T){
+gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0.12, viz=F, msg=T,
+                          inflexion_pts_range = c(5,7),
+                          knee_diff_thresh = 0.2,
+                          segment_length_range = c(0.15, 0.6),
+                          n_splines = 30,
+                          search_w = 6) {
+  
   if(is.null(insertion) | all(is.na(insertion)) |
      is.null(leg_coords) | all(is.na(leg_coords)) | length(leg_coords)==2){
     return(NA)
@@ -501,9 +488,9 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
   leg_img <- coordsAsImg(leg_coords, padding=2, return_offset=T) #image conversion for contour algorithm
   leg_cont_offset <- simpleCont(leg_img$img) #contour of image with offset
   cont <- leg_cont_offset + matrix(leg_img$coord_offset[1,], nrow=nrow(leg_cont_offset), ncol=2, byrow=TRUE) #offset correction
-  peaks <- tryCatch({contourTurns(cont, search_w = 6, splines_df = 30)}, #contour angles
+  peaks <- tryCatch({contourTurns(cont, search_w = search_w, splines_df = n_splines)}, #contour angles
            error = function(e) {
-             if(msg) message("contourTurns() failed : ",e$message)
+             if(msg) message("contourTurns() failed : ", e$message)
              return(NULL)
            })
   if(all(is.null(peaks))) { return(NA) }
@@ -520,13 +507,14 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
   dist_peaks_rev <- c(0, (dist_cont-dist_peaks_str)[-1] %>% rev) #same but counterclockwise
   names(dist_peaks_rev)[1] <- "1"
   dist_peaks <- list(dist_peaks_str, dist_peaks_rev)
-  if(length(peaks_inser) < 8 && length(peaks_inser) > 4){ #incoherent number of inflexion points
+  if(length(peaks_inser) >= min(inflexion_pts_range) &&
+     length(peaks_inser) <= max(inflexion_pts_range)){ #incoherent number of inflexion points
     check_detection <- T
     #2 Ignore inflexion points too close to the insertion, as they probably correspond to the inflexion
     cont_half_l <- dist_cont/2 #leg contour half length
     filt_id <- lapply(dist_peaks, function(x) !(x <= cont_half_l*inser_thresh))#filtered id in dist_peaks & peaks_inser
     #3 Knees
-    #TODO REMPLACE knee_dist !!!
+    #TODO REPLACE knee_dist !!!
     filt_cont_pts <- lapply(filt_id, function(y) {
       ids <- y %>% names %>% as.numeric #numeric id
       filt_ids <- ids[y] #valid numeric id
@@ -536,10 +524,10 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
       (insertion-x)^2 %>% sum %>% sqrt #distance
     })
     #old // mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id)
-    #old // if((diff(knee_dist / cont_half_l) %>% abs) < 0.2) { #if the dif between the two knee-ankle distances is below 20% of half contour length
+    #old // if((diff(knee_dist / cont_half_l) %>% abs) < 0.2) { 
     knee_dist <- mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id) #for later
     knee_abs_diff <- (knee_abs_dist %>% diff / sum(knee_abs_dist)) %>% abs
-    if(knee_abs_diff < 0.2) {
+    if(knee_abs_diff < knee_diff_thresh) { #if the dif between the two knee-ankle distances is below 20% of half contour length
       #4 Ankles
       ankle_dist <- mapply(function(x,y) {x[y][2]}, dist_peaks, filt_id)
       if( (diff(ankle_dist-knee_dist) %>% abs / cont_half_l) > tresh_ankle ){ #if the dif between the two knee-ankle distances is above tresh_ankle% of half contour length
@@ -563,7 +551,8 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
     segment_lengths <- sapply(list(insertion, ankle), function(pt){  #for safety check
       ((pt -knee)^2 %>% sum %>% abs %>% sqrt)/cont_half_l
     })
-    if( all(segment_lengths < 0.15 | segment_lengths > 0.6) ){ #incoherent segment sizes relative to contour
+    if( all(segment_lengths < min(segment_length_range) |
+            segment_lengths > max(segment_length_range)) ){ #incoherent segment sizes relative to contour
       return(NA)
     }
     if(viz){

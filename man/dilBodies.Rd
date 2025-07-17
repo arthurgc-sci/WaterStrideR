@@ -4,12 +4,14 @@
 \alias{dilBodies}
 \title{Body dilation proportionnal to body length}
 \usage{
-dilBodies(body_img, body_length)
+dilBodies(body_img, body_length, dilation_ratio = 0.3)
 }
 \arguments{
 \item{body_img}{Binary pixset or c.img of waterstrider body}
 
 \item{body_length}{A numerical for length of corresponding body}
+
+\item{dilation_ratio}{Dilation kernel size as body length ratio}
 }
 \description{
 Body dilation proportionnal to body length

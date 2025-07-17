@@ -4,7 +4,12 @@
 \alias{gLegInsertion}
 \title{Find rear leg insertions}
 \usage{
-gLegInsertion(ori_angle, dil_contour, inter_index)
+gLegInsertion(
+  ori_angle,
+  dil_contour,
+  inter_index,
+  leg_lim_ratio = c(0.25, 0.6)
+)
 }
 \arguments{
 \item{ori_angle}{Numerical value or vector of numericals
@@ -14,6 +19,9 @@ for orientation angle of individuals in radians}
 
 \item{inter_index}{list or single vector of numericals for indexes of intersection points
 in corresponding dilated contour}
+
+\item{leg_lim_ratio}{numeric vector of length two. Values between 0 and 1 to define range where
+legs are expected to be found as ratio of body elongation starting from the back (excluding head appendages and hind body part)}
 }
 \description{
 Returns rear leg insertions points as xy coordinates from the dilated body contour dilated_body

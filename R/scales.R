@@ -101,7 +101,7 @@ nZeros <- function(text, zeros=1){
 #' Detect ruler as biggest red label,
 #' 
 #' @param img c.img or pixset. base image
-#' @param red_thresh required difference in intesity between red component
+#' @param red_thresh required difference in intensity between red component
 #' and other components to detect the red ruler
 #' @param confidence_interval a numerical value in range 0:1.
 #' confidence interval value to build the error margin from

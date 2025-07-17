@@ -15,7 +15,7 @@ redRulerScale(
 \arguments{
 \item{img}{c.img or pixset. base image}
 
-\item{red_thresh}{required difference in intesity between red component
+\item{red_thresh}{required difference in intensity between red component
 and other components to detect the red ruler}
 
 \item{confidence_interval}{a numerical value in range 0:1.
