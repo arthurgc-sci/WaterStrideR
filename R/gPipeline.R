@@ -9,19 +9,70 @@
 #' @param write_output logical, to save metrics as csv and print image analysis diagnostic plots
 #' @param return_df logical, to return metrics in R
 #' @param single_write logical, writing method for gWritePipeline()
-#' @param thresh numerical value in range 0:1, global gray-value threshold
-#' for the initial binarization of the input image
 #' @param winged_names vector, two names for not-winged / winged individuals
 #' @param auto_scale a boolean. If 'TRUE' : red ruler based scale
-#'
+#' @param k.bin_thresh numerical in \code{[0, 1]}. Global gray-value threshold
+#' for the initial binarization of the input image
+#' @param k.clean_kernel numerical. Kernel size for morphological opening and closing 
+#' of body points to get a cleaner shape.
+#' @param k.crop_size_factor numerical. Individual's crop size relative to body length
+#' @param k.gmm_slope_value numerical. y-value of individual's plot model
+#' (derivative of GMM used to fit gray values) to use to define threshold between individual's
+#' gray values and those of the background.
+#' @param k.body_dilation_ratio numerical in \code{[0, 1]}. Dilation kernel size as body length ratio for creation
+#' of dilated body.
+#' @param k.leglm_search_w numerical. Distance (in number of points in contour) to use to compute leg contour angles
+#' @param k.leglm_splines_df numerical. Number of splines to fit leg contour angle variation
+#' @param f.red_thresh numerical in \code{[0, 1]}. Difference in intensity between red component
+#' and other components to detect the red ruler. Only relevant if auto_scale == TRUE
+#' @param f.clean_small_spots numerical. Minimal size (in number of pixels) allowed for a patch
+#' of with pixels (label) found after individual thresholding.
+#' @param f.leg_lim_ratio numerical vector of length 2. Values between 0 and 1 to define range where
+#' legs insertions are expected to be found on the dilated body contour as ratio of body elongation
+#' starting from the back (thus excluding head appendages and hind body part)
+#' @param f.leg_inser_thresh numerical in \code{[0, 1]}. As ratio of leg half contour length.
+#' Threshold to remove angular points too close to the leg insertion point when starting to look for
+#' knee points in leg landmarks.
+#' @param f.leg_inser_knee_thresh numerical in \code{[0, 1]}. Threshold for knee-insertion points dissimilarity
+#' Tolerated ratio between the distances from the insertion point to each detected knee
+#' A value close to 0 will ensure knee-insertion distances are similar
+#' @param f.leg_ankle_knee_thresh numerical in \code{[0, 1]}. Threshold for knee-ankle points dissimilarity
+#' As ratio of leg half contour length. When detecting ankles point using knee points, threshold
+#' to detect if the difference between the two knee-ankle distances is realistically acceptable 
+#' @param f.leg_n_inflexions numerical vector of length 2. Tolerated range of inflexion points
+#' on leg contour. Usually 1 or 2 for extreme ends of the limb, and 2 per expected joint in the
+#' middle of it.
+#' @param f.segment_lengths_range numerical vector of length 2 n \code{[0, 1]}.
+#' Range of tolerated leg segments sizes relative to leg half contour length.
+#' 
 #' @export
 gPipeline <- function(img_path, write_output=T, return_df=T,
-                      single_write=T, thresh=0.8, winged_names=c(0,1),
-                      auto_scale=T){
+                      single_write=T, winged_names=c(0,1),
+                      auto_scale=T,
+                      # In-pipeline parameters
+                      # a. Key variables
+                      k.bin_thresh = 0.8,
+                      k.clean_kernel = 3,
+                      k.crop_size_factor = 3.5,
+                      k.gmm_slope_value = -25,
+                      k.body_dilation_ratio = 0.3,
+                      k.leglm_search_w = 6,
+                      k.leglm_splines_df = 30,
+                      # b. Filters
+                      f.red_thresh = 0.05,
+                      f.clean_small_spots = 25,
+                      f.leg_lim_ratio = c(.25,.6),
+                      f.leg_inser_thresh = .1,
+                      f.leg_inser_knee_thresh = .2,
+                      f.leg_ankle_knee_thresh = .12,
+                      f.leg_n_inflexions = c(5, 7),
+                      f.segment_lengths_range = c(.15, .6)
+                      ){
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
-  img_bin <- binaryLoad(img_path, thresh) #load and binarize image
+  img_bin <- binaryLoad(img_path,
+                        threshold = k.bin_thresh) #load and binarize image
   #Segmenting image
   body_lab_points <- gFastSeg(img_bin) #segmentation
   #Body base metrics
@@ -31,16 +82,19 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   })
   message("| \n2 - Computing scale")
   #Scale
-  scale <- pipelineScale(base_img, auto_scale) #get scale
+  scale <- pipelineScale(base_img, auto_scale,
+                         red_thresh = f.red_thresh) #get scale
   message("| \n3 - Computing body")
   body_length <- body_length_pix/scale[1] #conversion in mm
   error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
   #clean bodies
-  clean_body_points <- cleanBodyShape(body_lab_points)
+  clean_body_points <- cleanBodyShape(body_lab_points,
+                                      kernel_size = k.clean_kernel)
   #Remove bodies
   im_nobodies <- gNobody(base_img = base_img, body_lab_points = clean_body_points, viz=F)
   #Size based ind crop
-  l_crop <- gCrop(im_nobodies, body_centroids, body_length_pix, viz=F)
+  l_crop <- gCrop(im_nobodies, body_centroids, body_length_pix, viz = F,
+                  factor = k.crop_size_factor)
   #Fit GMM to image values
   message("| \n4 - Individual thresholding")
   #***Formats
@@ -50,14 +104,17 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   body <- body_l_crops %>% imgAsCoords #body as coordinates, same reference as dilcont
   cen <- lapply(body, function(x){ apply(x,2,mean) }) #new centroids
   #GMM threshold
-  l_cropbin <- gGMMThresh(l_crop$img, msg=F)
+  l_cropbin <- gGMMThresh(l_crop$img, msg=F,
+                          y_root = k.gmm_slope_value)
   #Clean data
-  full <- gCleanBin(l_cropbin, cen, as_coords=F)
+  full <- gCleanBin(l_cropbin, cen, as_coords=F,
+                    px_filter = f.clean_small_spots)
   
   message("| \n5 - Orienting individuals")
   #1 - Dilate body contour on same coords as leg crops
   dilbody <- dilBodies(body_img = body_l_crops,
-                       body_length = body_length_pix) #contour of the dilation as the intersection line
+                       body_length = body_length_pix, #contour of the dilation as the intersection line
+                       dilation_ratio = k.body_dilation_ratio)
   #2 - Dilated body contour as coords
   dilcont <- simpleCont(dilbody)
   #3 - Intersections (as boolean of rows in dilcont)
@@ -70,7 +127,8 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   
   message("| \n6 - Leg segmentation")
   #5 - Hind legs insertions
-  inser <- gLegInsertion(ori_angle=ang, dil_contour=dilcont, inter_index=inter_idx)
+  inser <- gLegInsertion(ori_angle=ang, dil_contour=dilcont, inter_index=inter_idx,
+                         leg_lim_ratio = f.leg_lim_ratio)
   #6 - Hind legs segmentation
   legs <- gLegSeg(gerris = full,
                   dilated_body = dilbody,
@@ -78,7 +136,15 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
                   insertions = inser)
   message("| \n7 - Leg landmarking & measurement")
   #7 - Get Points of interest from leg
-  leg_lm0 <- gLegLandmarks(legs, inser, viz=F, msg=F)
+  leg_lm0 <- gLegLandmarks(leg_coords = legs, insertion = inser, viz=F, msg=F,
+                           search_w = k.leglm_search_w,
+                           n_splines = k.leglm_splines_df,
+                           inser_thresh = f.leg_inser_thresh,
+                           knee_diff_thresh = f.leg_inser_knee_thresh,
+                           tresh_ankle = f.leg_ankle_knee_thresh,
+                           inflexion_pts_range = f.leg_n_inflexions,
+                           segment_length_range = f.segment_lengths_range
+                           )
   #8 - Correct insertion landmark by connection leg to body
   leg_lm <- gConnectLeg(body, leg_lm0)
   #9 - Distances

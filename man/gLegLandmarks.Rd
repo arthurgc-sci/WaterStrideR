@@ -26,7 +26,7 @@ leg points coordinates}
 insertion points coordinates}
 
 \item{inser_thresh}{Numerical value in range 0:1 for threshold to remove
-angular points too close to the leg insertion points
+angular points too close to the leg insertion point
 (value as fraction of half contour length)}
 
 \item{tresh_ankle}{Numerical value in range 0:1 for threshold to detect if
@@ -39,7 +39,9 @@ the difference between the two knee-ankle distances is realistically acceptable
 
 \item{inflexion_pts_range}{vector of two integers. Tolerated range of inflexion points on leg contour}
 
-\item{knee_diff_thresh}{numerical in \code{[0, 1]}. Minimal tolerated knee-ankle distance as ratio of half leg contour length}
+\item{knee_diff_thresh}{numerical in \code{[0, 1]}.
+Tolerated ratio between the distances from the insertion point to each detected knee
+A value close to 0 will ensure knee-insertion distances are similar}
 
 \item{segment_length_range}{vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
 as ratio of half leg contour distance}

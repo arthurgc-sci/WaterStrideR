@@ -441,7 +441,7 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' @param insertion numerical matrix or dataframe or list of those types.
 #' insertion points coordinates
 #' @param inser_thresh Numerical value in range 0:1 for threshold to remove
-#' angular points too close to the leg insertion points 
+#' angular points too close to the leg insertion point
 #' (value as fraction of half contour length)
 #' @param tresh_ankle Numerical value in range 0:1 for threshold to detect if
 #' the difference between the two knee-ankle distances is realistically acceptable 
@@ -449,7 +449,9 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' @param viz logical. visualization option
 #' @param msg logical. message option
 #' @param inflexion_pts_range vector of two integers. Tolerated range of inflexion points on leg contour
-#' @param knee_diff_thresh numerical in \code{[0, 1]}. Minimal tolerated knee-ankle distance as ratio of half leg contour length
+#' @param knee_diff_thresh numerical in \code{[0, 1]}. 
+#' Tolerated ratio between the distances from the insertion point to each detected knee
+#' A value close to 0 will ensure knee-insertion distances are similar
 #' @param segment_length_range vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
 #' as ratio of half leg contour distance
 #' @param n_splines an integer. Number of splines to fit leg contour angle variation
@@ -512,22 +514,22 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
     check_detection <- T
     #2 Ignore inflexion points too close to the insertion, as they probably correspond to the inflexion
     cont_half_l <- dist_cont/2 #leg contour half length
-    filt_id <- lapply(dist_peaks, function(x) !(x <= cont_half_l*inser_thresh))#filtered id in dist_peaks & peaks_inser
+    filt_id <- lapply(dist_peaks, function(x) (x >= cont_half_l*inser_thresh))#filtered id in dist_peaks & peaks_inser
     #3 Knees
     #TODO REPLACE knee_dist !!!
     filt_cont_pts <- lapply(filt_id, function(y) {
       ids <- y %>% names %>% as.numeric #numeric id
       filt_ids <- ids[y] #valid numeric id
-      cont_inser[filt_ids,][1,] #corresponding contour point
+      cont_inser[filt_ids,][1,] #1st corresponding contour point in each direction
     })
     knee_abs_dist <- sapply(filt_cont_pts, function(x){
       (insertion-x)^2 %>% sum %>% sqrt #distance
     })
     #old // mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id)
-    #old // if((diff(knee_dist / cont_half_l) %>% abs) < 0.2) { 
+    #old // if((diff(knee_dist / cont_half_l) %>% abs) < 0.2) {  #if the dif between the two knee-ankle distances is below 20% of half contour length
     knee_dist <- mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id) #for later
     knee_abs_diff <- (knee_abs_dist %>% diff / sum(knee_abs_dist)) %>% abs
-    if(knee_abs_diff < knee_diff_thresh) { #if the dif between the two knee-ankle distances is below 20% of half contour length
+    if(knee_abs_diff < knee_diff_thresh) { 
       #4 Ankles
       ankle_dist <- mapply(function(x,y) {x[y][2]}, dist_peaks, filt_id)
       if( (diff(ankle_dist-knee_dist) %>% abs / cont_half_l) > tresh_ankle ){ #if the dif between the two knee-ankle distances is above tresh_ankle% of half contour length

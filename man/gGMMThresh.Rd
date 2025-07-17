@@ -13,7 +13,7 @@ gGMMThresh(gerris_crops, nG = 2, noise_n = 0.005, y_root = -25, msg = T)
 
 \item{noise_n}{normal noise to add to histogram data, helps breaking plateaus}
 
-\item{y_root}{see gMMThresh}
+\item{y_root}{Numeric. Y-value at which the derivative of the fitted Gaussian Mixture Model (GMM) is evaluated to find threshold roots.}
 
 \item{msg}{logical for display of diagnostic messages}
 }

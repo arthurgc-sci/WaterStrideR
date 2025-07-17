@@ -184,9 +184,11 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
 #' 
 #' @param img c.img or pixset
 #' @param auto_scale boolean for redRulerScale or manual
-pipelineScale <- function(img, auto_scale){
+#' @param red_thresh required difference in intensity between red component
+#' and other components to detect the red ruler
+pipelineScale <- function(img, auto_scale, red_thresh=0.05){
   if(auto_scale){
-    scale <- redRulerScale(img, msg=F) #get scale
+    scale <- redRulerScale(img, msg=F, red_thresh=red_thresh) #get scale
   } else {
     scale1 <- getScale(img)
     scale <- c(scale1, NA) #no error margin : not yet implemented here    

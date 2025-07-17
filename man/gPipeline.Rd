@@ -9,9 +9,23 @@ gPipeline(
   write_output = T,
   return_df = T,
   single_write = T,
-  thresh = 0.8,
   winged_names = c(0, 1),
-  auto_scale = T
+  auto_scale = T,
+  k.bin_thresh = 0.8,
+  k.clean_kernel = 3,
+  k.crop_size_factor = 3.5,
+  k.gmm_slope_value = -25,
+  k.body_dilation_ratio = 0.3,
+  k.leglm_search_w = 6,
+  k.leglm_splines_df = 30,
+  f.red_thresh = 0.05,
+  f.clean_small_spots = 25,
+  f.leg_lim_ratio = c(0.25, 0.6),
+  f.leg_inser_thresh = 0.1,
+  f.leg_inser_knee_thresh = 0.2,
+  f.leg_ankle_knee_thresh = 0.12,
+  f.leg_n_inflexions = c(5, 7),
+  f.segment_lengths_range = c(0.15, 0.6)
 )
 }
 \arguments{
@@ -23,12 +37,57 @@ gPipeline(
 
 \item{single_write}{logical, writing method for gWritePipeline()}
 
-\item{thresh}{numerical value in range 0:1, global gray-value threshold
-for the initial binarization of the input image}
-
 \item{winged_names}{vector, two names for not-winged / winged individuals}
 
 \item{auto_scale}{a boolean. If 'TRUE' : red ruler based scale}
+
+\item{k.bin_thresh}{numerical in \code{[0, 1]}. Global gray-value threshold
+for the initial binarization of the input image}
+
+\item{k.clean_kernel}{numerical. Kernel size for morphological opening and closing
+of body points to get a cleaner shape.}
+
+\item{k.crop_size_factor}{numerical. Individual's crop size relative to body length}
+
+\item{k.gmm_slope_value}{numerical. y-value of individual's plot model
+(derivative of GMM used to fit gray values) to use to define threshold between individual's
+gray values and those of the background.}
+
+\item{k.body_dilation_ratio}{numerical in \code{[0, 1]}. Dilation kernel size as body length ratio for creation
+of dilated body.}
+
+\item{k.leglm_search_w}{numerical. Distance (in number of points in contour) to use to compute leg contour angles}
+
+\item{k.leglm_splines_df}{numerical. Number of splines to fit leg contour angle variation}
+
+\item{f.red_thresh}{numerical in \code{[0, 1]}. Difference in intensity between red component
+and other components to detect the red ruler. Only relevant if auto_scale == TRUE}
+
+\item{f.clean_small_spots}{numerical. Minimal size (in number of pixels) allowed for a patch
+of with pixels (label) found after individual thresholding.}
+
+\item{f.leg_lim_ratio}{numerical vector of length 2. Values between 0 and 1 to define range where
+legs insertions are expected to be found on the dilated body contour as ratio of body elongation
+starting from the back (thus excluding head appendages and hind body part)}
+
+\item{f.leg_inser_thresh}{numerical in \code{[0, 1]}. As ratio of leg half contour length.
+Threshold to remove angular points too close to the leg insertion point when starting to look for
+knee points in leg landmarks.}
+
+\item{f.leg_inser_knee_thresh}{numerical in \code{[0, 1]}. Threshold for knee-insertion points dissimilarity
+Tolerated ratio between the distances from the insertion point to each detected knee
+A value close to 0 will ensure knee-insertion distances are similar}
+
+\item{f.leg_ankle_knee_thresh}{numerical in \code{[0, 1]}. Threshold for knee-ankle points dissimilarity
+As ratio of leg half contour length. When detecting ankles point using knee points, threshold
+to detect if the difference between the two knee-ankle distances is realistically acceptable}
+
+\item{f.leg_n_inflexions}{numerical vector of length 2. Tolerated range of inflexion points
+on leg contour. Usually 1 or 2 for extreme ends of the limb, and 2 per expected joint in the
+middle of it.}
+
+\item{f.segment_lengths_range}{numerical vector of length 2 n \code{[0, 1]}.
+Range of tolerated leg segments sizes relative to leg half contour length.}
 }
 \description{
 Finds individual's size, sex, presence of wing, tibia and femur length
