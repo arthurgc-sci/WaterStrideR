@@ -26,6 +26,14 @@ library(WaterStrideR)
 
 We use it like this:
 ```{r}
+
+single <- system.file("demodata", "single_hd.jpg", package = "WaterStrideR")
+bunch <- system.file("demodata", "small_test.jpg", package = "WaterStrideR")
+img1 <- imager::load.image(single)
+img2 <- imager::load.image(bunch)
+par(mfrow=c(1,2))
+plot(img1, main="test image 1")
+plot(img2, main="test image 2")
 #gRunPipeline(img_path=,)
 
 ```
