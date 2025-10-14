@@ -4,7 +4,10 @@
 \alias{openGrDevice}
 \title{Open a Graphics Device Depending on OS}
 \usage{
-openGrDevice()
+openGrDevice(title = "R Graphics Window")
+}
+\arguments{
+\item{title}{a string. Graphic window's name}
 }
 \value{
 \code{TRUE} if the graphics device was successfully opened, \code{FALSE} otherwise.

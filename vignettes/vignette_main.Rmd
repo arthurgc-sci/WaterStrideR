@@ -26,11 +26,7 @@ library(WaterStrideR)
 
 We use it like this:
 ```{r}
-gRunPipeline(img_path=,
-             aze,
-             ,aze
-             ,aze,
-)
+#gRunPipeline(img_path=,)
 
 ```
 Load in pkg with Build>Install Source package

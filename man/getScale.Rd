@@ -4,7 +4,7 @@
 \alias{getScale}
 \title{Manual scaling of an image}
 \usage{
-getScale(img, scale_value = NA, plot_col = "#ff9100")
+getScale(img, scale_value = NA, plot_col = "#ff9100", lwd = 1, cex_max = 1.2)
 }
 \arguments{
 \item{img}{a c.img or pixset}
@@ -12,6 +12,10 @@ getScale(img, scale_value = NA, plot_col = "#ff9100")
 \item{scale_value}{scale value. If NA: value will be asked in console}
 
 \item{plot_col}{string or numerical for plot color}
+
+\item{lwd}{numerical. line width on graphic windows between scale points.}
+
+\item{cex_max}{numerical. black point size of scale points.}
 }
 \value{
 number of pixels per unit

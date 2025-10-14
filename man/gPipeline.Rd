@@ -11,6 +11,7 @@ gPipeline(
   single_write = T,
   winged_names = c(0, 1),
   auto_scale = T,
+  predict_sex_wing = T,
   k.bin_thresh = 0.8,
   k.clean_kernel = 3,
   k.crop_size_factor = 3.5,
@@ -40,6 +41,8 @@ gPipeline(
 \item{winged_names}{vector, two names for not-winged / winged individuals}
 
 \item{auto_scale}{a boolean. If 'TRUE' : red ruler based scale}
+
+\item{predict_sex_wing}{a boolean. To predict sex and presence of wings}
 
 \item{k.bin_thresh}{numerical in \code{[0, 1]}. Global gray-value threshold
 for the initial binarization of the input image}
