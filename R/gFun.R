@@ -218,7 +218,10 @@ recropBodies <- function(body_coords, base_img, crop_coords){
 dilBodies <- function(body_img, body_length, dilation_ratio=0.3){
   if(!imager::is.pixset(body_img) && !(imager::is.cimg(body_img))){ #check type 
     if(is.list(body_length) | is.vector(body_length)){
-      res <- mapply(dilBodies, body_img, body_length, SIMPLIFY = F) #vectorization
+      res <- mapply(function(im, l){
+        dilBodies(im, l, dilation_ratio=dilation_ratio)
+      }
+      , body_img, body_length, SIMPLIFY = F) #vectorization
       return(res)
     } else {
       stop("Wrong formats for body_img or body_length in dilBodies()")

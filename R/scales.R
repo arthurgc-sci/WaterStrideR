@@ -6,6 +6,7 @@
 #' - On **macOS**, uses `quartz()`
 #' - On **Linux** and **Windows**, uses `X11()`
 #'
+#' @param title a string. Graphic window's name
 #' @return
 #' `TRUE` if the graphics device was successfully opened, `FALSE` otherwise.
 #'
@@ -17,15 +18,15 @@
 #'   }
 #' }
 #' }
-openGrDevice <- function(){
+openGrDevice <- function(title = "R Graphics Window"){
   if (!interactive()) {
     stop("This function is interactive and must be used in an interactive session")
   }
   tryCatch({
     if(Sys.info()[["sysname"]] == "Darwin") { #MAC
-      grDevices::quartz()
+      grDevices::quartz(title = title)
     } else { #windows or linux
-      grDevices::X11()
+      grDevices::X11(title = title)
     }
     return(TRUE)
   }, error = function(e){
@@ -42,9 +43,12 @@ openGrDevice <- function(){
 #' @param img a c.img or pixset
 #' @param scale_value scale value. If NA: value will be asked in console
 #' @param plot_col string or numerical for plot color
+#' @param lwd numerical. line width on graphic windows between scale points.
+#' @param cex_max numerical. black point size of scale points.
 #' @return number of pixels per unit
 #' @export
-getScale <- function(img, scale_value = NA, plot_col="#ff9100"){
+getScale <- function(img, scale_value = NA, plot_col="#ff9100",
+                     lwd = 1, cex_max = 1.2){
   if(!imager::is.pixset(img) && !imager::is.cimg(img)){
     stop("img must be a pixset of c.img")
   }
@@ -64,21 +68,22 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100"){
     stop("❌ scale_value must be a single numeric value")
   }
   # 2 - Get scale pixel size
-  if(!openGrDevice()){ #opening interactive windows to bypass errors with locator() in Rstudio plot
+  if(!openGrDevice(title = "Click two points to set scale (this window can then be closed)")){ #opening interactive windows to bypass errors with locator() in Rstudio plot
     message("Using plot to set scale 
     If you are using Rstudio please set
     Tools>Global options>Appearance>Zoom = 100%") #using local plot if opening graphic device fails
   }
+  cex_min=cex_max*.6 #colored point size (20% black outline)
   par(mar=rep(0,4))
   plot(img, ann=FALSE, asp=1)
   scale_pt1 <- graphics::locator(1) #click point on image
-  points(scale_pt1, pch=16, col=1, cex=1.2)
-  points(scale_pt1, pch=16, col=plot_col, cex=0.7)
+  points(scale_pt1, pch=16, col=1, cex=cex_max)
+  points(scale_pt1, pch=16, col=plot_col, cex=cex_min)
   scale_pt2 <- graphics::locator(1)
-  points(scale_pt2, pch=16, col=1, cex=1.2)
-  points(scale_pt2, pch=16, col=plot_col, cex=0.7)
+  points(scale_pt2, pch=16, col=1, cex=cex_max)
+  points(scale_pt2, pch=16, col=plot_col, cex=cex_min)
   graphics::segments(x0 = scale_pt1[[1]], y0 = scale_pt1[[2]], x1 = scale_pt2[[1]], y1 = scale_pt2[[2]],
-           col = plot_col, lwd = 2)
+           col = plot_col, lwd = 1)
   dist_px <- (unlist(scale_pt1)-unlist(scale_pt2))^2 %>% sum %>% sqrt #computing distance
   return(dist_px/as.numeric(scale_value)) #pixel per unit
 }

@@ -11,6 +11,7 @@
 #' @param single_write logical, writing method for gWritePipeline()
 #' @param winged_names vector, two names for not-winged / winged individuals
 #' @param auto_scale a boolean. If 'TRUE' : red ruler based scale
+#' @param predict_sex_wing a boolean. To predict sex and presence of wings
 #' @param k.bin_thresh numerical in \code{[0, 1]}. Global gray-value threshold
 #' for the initial binarization of the input image
 #' @param k.clean_kernel numerical. Kernel size for morphological opening and closing 
@@ -49,6 +50,7 @@
 gPipeline <- function(img_path, write_output=T, return_df=T,
                       single_write=T, winged_names=c(0,1),
                       auto_scale=T,
+                      predict_sex_wing=T,
                       # In-pipeline parameters
                       # a. Key variables
                       k.bin_thresh = 0.8,
@@ -150,18 +152,28 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   #9 - Distances
   leg_size <- gMeasureLeg(leg_lm, scale) #leg segment sizes in microns
   #Sex and wing prediction using body contour
-  message("| \n8 - Sex and wing prediction")
-  #elliptic fourier harmonics reduced with PCA
-  hPCA <- scoresEFA(body_l_crops, ang, nb_h=7, viz=F)
-  #loading LDA models from package
-  LDA_sex <- loadLDA("LDAsex")
-  LDA_wingF <- loadLDA("LDAwingF")
-  LDA_wingM <- loadLDA("LDAwingM")
-  #predict sex using LDA model
-  sex_prediction <- gPredictLDA(LDA_sex, hPCA) #LDA trained on 2PC of 7EF
-  #Predict presence of wings using LDA model
-  wing_prediction <- gPredictWing(PCA_scores = hPCA, sex_class = sex_prediction$class,
-                                  LDA_f = LDA_wingF, LDA_m = LDA_wingM, wing_names = winged_names)
+  n_ind <- ang %>% na.omit %>% length
+  sex_prediction <- rep(NA,Sex)
+  wing_prediction <- sex_prediction
+  if(predict_sex_wing){
+    if(n_ind<20){
+      predict_sex_wing <- F
+      warning("predict_sex_wing was set to TRUE but sex and presence of wings can not be predicted on images with less than 20 individuals")
+    } else {
+      message("| \n8 - Sex and wing prediction")
+      #elliptic fourier harmonics reduced with PCA
+      hPCA <- scoresEFA(body_l_crops, ang, nb_h=7, viz=F)
+      #loading LDA models from package
+      LDA_sex <- loadLDA("LDAsex")
+      LDA_wingF <- loadLDA("LDAwingF")
+      LDA_wingM <- loadLDA("LDAwingM")
+      #predict sex using LDA model
+      sex_prediction <- gPredictLDA(LDA_sex, hPCA) #LDA trained on 2PC of 7EF
+      #Predict presence of wings using LDA model
+      wing_prediction <- gPredictWing(PCA_scores = hPCA, sex_class = sex_prediction$class,
+                                      LDA_f = LDA_wingF, LDA_m = LDA_wingM, wing_names = winged_names)  
+    }
+  }
   
   #OUTPUTS
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "", basename(img_path), ignore.case = TRUE)
@@ -173,11 +185,16 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
                        left_tibia = leg_res$right_tibia %>% round,#inverting left/right due to error
                        right_tibia = leg_res$left_tibia %>% round,
                        left_femur = leg_res$right_femur %>% round,
-                       right_femur = leg_res$left_femur %>% round,
-                       sex = sex_prediction$class,
-                       F_proba = sex_prediction$posterior[,'F'],
-                       winged = wing_prediction$class,
-                       w_proba = 1-wing_prediction$posterior[,winged_names[2]])
+                       right_femur = leg_res$left_femur %>% round)
+  if(predict_sex_wing){
+    df_sw <- data.frame(
+      sex = sex_prediction$class,
+      F_proba = sex_prediction$posterior[,'F'],
+      winged = wing_prediction$class,
+      w_proba = 1-wing_prediction$posterior[,winged_names[2]]
+    )
+   df_out <- cbind(df_out, df_sw)
+ }
   
   if(write_output){
     # Detection plot of the image

@@ -14,6 +14,23 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Overview
+Small text here, introduction to the package
+Blablabla
+
+## Installation
 ```{r setup}
 library(WaterStrideR)
 ```
+
+
+We use it like this:
+```{r}
+gRunPipeline(img_path=,
+             aze,
+             ,aze
+             ,aze,
+)
+
+```
+Load in pkg with Build>Install Source package
