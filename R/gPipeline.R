@@ -347,3 +347,48 @@ gRunPipeline <- function(img_path, return_df=T, ...){
     }
   }
 }
+
+#' Keep only one tibia and one femur column
+#'
+#' Transform result dataframe to only have one tibia and one femur columns
+#' If both legs are present, return mean values. Removes NA lines.
+#'
+#' @param df_result result dataframe as outout of gPipeline or gRunPipeline
+#' @export
+gOneLeg <- function(df_result){
+  df_result=res1
+  method="mean"
+  
+  names_v <- c("left_femur","left_tibia","right_femur","right_tibia")
+  lleg <- list(
+    L=df_result[,names_v[1:2]],
+    R=df_result[,names_v[3:4]]
+  )
+  r_na <- !is.na(lleg$R$right_tibia)
+  l_na <- !is.na(lleg$L$left_tibia)
+  
+  one_leg <- xor(l_na, r_na)
+  left_leg <- one_leg & l_na #get left only
+  right_leg <- one_leg & r_na #get right only
+  both_leg <- l_na & r_na #get both
+  df_leg_choice <- data.frame(both_leg,left_leg,right_leg)
+  
+  new_leg_l <- lapply(1:nrow(df_result), function(i){
+    if(df_leg_choice[i,"both_leg"]){
+      matrix_data <- cbind(as.numeric(lleg$R[i,]), as.numeric(lleg$L[i,]))
+      as.numeric(rowMeans(matrix_data))
+    } else if(df_leg_choice[i,"left_leg"]) {
+      as.numeric(lleg$L[i,])
+    } else if(df_leg_choice[i,"right_leg"]) {
+      as.numeric(lleg$R[i,])
+    } else { #none
+      c(NA,NA)
+    }
+  })
+  new_leg <- do.call(rbind, new_leg_l)
+  df_result2 <- df_result[,!(names(df_result)) %in% names_v]
+  df_result2[,c("femur","tibia")] <- new_leg
+  df_result3 <- df_result2[!is.na(df_result2$femur),]
+  
+  return(df_result3)
+}
