@@ -152,7 +152,7 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   #9 - Distances
   leg_size <- gMeasureLeg(leg_lm, scale) #leg segment sizes in microns
   #Sex and wing prediction using body contour
-  n_ind <- ang %>% na.omit %>% length
+  n_ind <- ang %>% stats::na.omit() %>% length
   sex_prediction <- rep(NA, n_ind)
   wing_prediction <- sex_prediction
   if(predict_sex_wing){

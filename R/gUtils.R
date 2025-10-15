@@ -9,7 +9,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom grDevices dev.off gray png
 #' @importFrom graphics abline hist legend lines par points symbols text
-#' @importFrom stats dnorm lm median pnorm prcomp predict qnorm rnorm sd uniroot na.omit
+#' @importFrom stats dnorm lm median pnorm prcomp predict qnorm rnorm sd uniroot
 #' @importFrom utils stack write.table
 #' @importFrom imager %inr%
 #' @import MASS
