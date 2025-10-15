@@ -741,7 +741,6 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
           points(pt[1], pt[2], pch = 16, col = pal0[j])
           lines(x[-j,], col = pal0[j], lwd = 2, lty = 1)
           ix <- j%%3+1
-          print(j)
           if(ix==3){ix <- 2}
           size <- round(size)
           off <- 0.2
