@@ -30,7 +30,7 @@ openGrDevice <- function(title = "R Graphics Window"){
     }
     return(TRUE)
   }, error = function(e){
-    warning("⚠️ Failed to open graphic device: ", conditionMessage(e))
+    warning("Failed to open graphic device: ", conditionMessage(e))
     return(FALSE)
   })
 }

@@ -175,7 +175,7 @@ contourAngles <- function(coords, search_w = 5){
 #' Body length from body points
 #'
 #' @param body_points a dataframe or matrix of body points coordinates
-#' @keywords internal
+#' @export
 bodyLength <- function(body_points){
   long_angle <- major_axis_angle(body_points) #elongation axis angle of the body
   proj_body <- body_points[,1]*cos(long_angle) + body_points[,2]*sin(long_angle) #coordinates on this axis

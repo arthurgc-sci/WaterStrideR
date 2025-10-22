@@ -9,7 +9,6 @@
 #' @param write_output logical, to save metrics as csv and print image analysis diagnostic plots
 #' @param return_df logical, to return metrics in R
 #' @param single_write logical, writing method for gWritePipeline()
-#' @param winged_names vector, two names for not-winged / winged individuals
 #' @param auto_scale a boolean. If 'TRUE' : red ruler based scale
 #' @param predict_sex_wing a boolean. To predict sex and presence of wings
 #' @param k.bin_thresh numerical in \code{[0, 1]}. Global gray-value threshold
@@ -45,12 +44,18 @@
 #' middle of it.
 #' @param f.segment_lengths_range numerical vector of length 2 n \code{[0, 1]}.
 #' Range of tolerated leg segments sizes relative to leg half contour length.
+#' @param return_everything boolean. to return key process step data in R.
 #' 
 #' @export
-gPipeline <- function(img_path, write_output=T, return_df=T,
-                      single_write=T, winged_names=c(0,1),
+gPipeline <- function(# INPUT
+                      img_path,
+                      # OUTPUT
+                      write_output=T,
+                      return_df=T,
+                      single_write=T,
                       auto_scale=T,
                       predict_sex_wing=T,
+                      return_everything=F,
                       # In-pipeline parameters
                       # a. Key variables
                       k.bin_thresh = 0.8,
@@ -152,28 +157,17 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
   #9 - Distances
   leg_size <- gMeasureLeg(leg_lm, scale) #leg segment sizes in microns
   #Sex and wing prediction using body contour
-  n_ind <- ang %>% stats::na.omit() %>% length
-  sex_prediction <- rep(NA, n_ind)
-  wing_prediction <- sex_prediction
+
   if(predict_sex_wing){
-    if(n_ind<20){
-      predict_sex_wing <- F
-      warning("predict_sex_wing was set to TRUE but sex and presence of wings can not be predicted on images with less than 20 individuals")
-    } else {
-      message("| \n8 - Sex and wing prediction")
-      #elliptic fourier harmonics reduced with PCA
-      hPCA <- scoresEFA(body_l_crops, ang, nb_h=7, viz=F)
-      #loading LDA models from package
-      LDA_sex <- loadLDA("LDAsex")
-      LDA_wingF <- loadLDA("LDAwingF")
-      LDA_wingM <- loadLDA("LDAwingM")
-      #predict sex using LDA model
-      sex_prediction <- gPredictLDA(LDA_sex, hPCA) #LDA trained on 2PC of 7EF
-      #Predict presence of wings using LDA model
-      wing_prediction <- gPredictWing(PCA_scores = hPCA, sex_class = sex_prediction$class,
-                                      LDA_f = LDA_wingF, LDA_m = LDA_wingM, wing_names = winged_names)  
+    message("| \n8 - Sex and wing prediction")
+    #prediction pipelines: body img > contour > EFA > PCA > LDA, using models from package
+    sex_prediction <- gBodyPredict(img_data = body_l_crops, #NA handling built-in
+                                   angle = ang,
+                                   what = "sex")
+    wing_prediction <- gBodyPredict(img_data = body_l_crops,
+                                    angle = ang,
+                                    what = "wing")
     }
-  }
   
   #OUTPUTS
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "", basename(img_path), ignore.case = TRUE)
@@ -186,12 +180,14 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
                        right_tibia = leg_res$left_tibia %>% round,
                        left_femur = leg_res$right_femur %>% round,
                        right_femur = leg_res$left_femur %>% round)
-  if(predict_sex_wing){
+  if(predict_sex_wing){ #add columns for sex/wing predictions
     df_sw <- data.frame(
-      sex = sex_prediction$class,
-      F_proba = sex_prediction$posterior[,'F'],
-      winged = wing_prediction$class,
-      w_proba = 1-wing_prediction$posterior[,winged_names[2]]
+      sex = c("F","M")[sex_prediction$class],
+      F_prob = sex_prediction$posterior[,"F"],
+      M_prob = sex_prediction$posterior[,"M"],
+      wing = (wing_prediction$class %>% as.numeric)-1, #scale 2-1 (model levels) to 1-0
+      winged_prob = wing_prediction$posterior[,"2"],
+      notwinged_prob = wing_prediction$posterior[,"1"]
     )
    df_out <- cbind(df_out, df_sw)
  }
@@ -213,12 +209,16 @@ gPipeline <- function(img_path, write_output=T, return_df=T,
     # Write plots and dataframe
     gWritePipeline(img_path, i_plots, detection_plot, df_out, dim_img=dim(base_img), single_write)
   }
-
+  
+  output <- list()
   if(return_df){
-    return(df_out)
+    output[["df"]] <- df_out
   }
+  if(return_everything){ #return mid-pipeline data (for model training or diagnostics for example)
+    output[["process_data"]] <- list(body_img = body_l_crops, angle = ang)
+  }
+  return(output)
 }
-
 
 #' Write waterstriders pipeline outputs in local directory
 #' 
@@ -253,7 +253,7 @@ gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, s
     iplot_dir <- paste0(out_dir,"/individuals_",clean_base_path)
     create_dir(iplot_dir, msg=F) #individuals dir
     dplot_path <- paste0(dplot_dir,"/detection_",clean_base_path,".png")
-    #global dataframe created in gMultiPipeline
+    #global dataframe will be created in gMultiPipeline
   }
   #individual's plot
   lapply(seq_along(i_plots), function(i){
@@ -288,11 +288,12 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
   for(img_path_i in 1:img_path_length){
     clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "", basename(img_path_list[img_path_i]), ignore.case = TRUE)
     message(paste0("\n  ",img_path_i,"/",img_path_length, " - Processing image \"",clean_base_path,"\"\n  |"))
-    df_out_list[[clean_base_path]] <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
+    pipe_result <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
               write_output=T,
               return_df=T, #return dataframe of each image analysis
               single_write=F, #writing format for whole directory
               ...) #gPipeline arguments
+    if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
   }
   #create and save dataframe
   multi_df_out <- do.call(rbind, df_out_list)
@@ -356,8 +357,6 @@ gRunPipeline <- function(img_path, return_df=T, ...){
 #' @param df_result result dataframe as outout of gPipeline or gRunPipeline
 #' @export
 gOneLeg <- function(df_result){
-  df_result=res1
-  method="mean"
   
   names_v <- c("left_femur","left_tibia","right_femur","right_tibia")
   lleg <- list(

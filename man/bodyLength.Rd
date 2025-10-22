@@ -12,4 +12,3 @@ bodyLength(body_points)
 \description{
 Body length from body points
 }
-\keyword{internal}
