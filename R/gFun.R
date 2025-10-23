@@ -27,7 +27,8 @@ gFastSeg <- function(img_bin, px_range=c(300,1500), viz=TRUE){
   if(viz){
     plot(img_bin)
     L_seg <- length(body_lab_points)
-    for(i in 1:L_seg) points(body_lab_points[[i]],col=rainbow(L_seg)[i],cex=.01)
+    cols <- grDevices::rainbow(L_seg)
+    for(i in 1:L_seg) points(body_lab_points[[i]],col=cols[i],cex=.01)
   }
   return(body_lab_points)
 }
@@ -37,20 +38,26 @@ gFastSeg <- function(img_bin, px_range=c(300,1500), viz=TRUE){
 #' @param base_img c.img or pixset of base image
 #' @param scale mean pixel amount for 1 micron
 #' @param x,y ordered position of individuals
+#' @param auto_scale boolean, TRUE if scale was produced by redRulerScale, FALSE if it was produced by getScale 
 #' @export
-gDetectionPlot <- function(base_img, scale, x, y){
-  par(mar = c(0,0,0,0), xaxs = "i", yaxs = "i")
+gDetectionPlot <- function(base_img, scale, x, y, auto_scale){
+  if(auto_scale){
+    scale_factor <- scale[1] * 10000
+    scale_label <- "1 cm"
+  } else {
+    scale_factor <- scale[1] * scale[2]
+    scale_label <- "unit"
+  }
+  par(mar = c(0, 0, 0, 0), xaxs = "i", yaxs = "i")
   plot(base_img)
-  #scale
   x_start <- 100
-  y_start <- ncol(base_img)-100
-  graphics::segments(x_start, y_start, x_start+scale*10000, y_start, col = "brown4", lwd = 4)
-  text(x = (2*x_start+scale[1]*10000)/2, y = y_start-50,
-       labels = "1 cm", col = "brown4", cex = 2)
-  #insects
-  points(x, y, pch=4, col="white", cex=2.5)
-  text(x, y+40,
-       labels = seq_along(x), col = "cyan", cex = 2.5)
+  y_start <- ncol(base_img) - 100
+  graphics::segments(x_start, y_start, x_start + scale_factor, 
+                     y_start, col = "brown4", lwd = 4)
+  text(x = (2 * x_start + scale_factor)/2, y = y_start - 
+         50, labels = scale_label, col = "brown4", cex = 2)
+  points(x, y, pch = 4, col = "white", cex = 2.5)
+  text(x, y + 40, labels = seq_along(x), col = "cyan", cex = 2.5)
 }
 
 #' Cropping points list

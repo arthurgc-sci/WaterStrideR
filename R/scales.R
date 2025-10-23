@@ -86,7 +86,7 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
            col = plot_col, lwd = 1)
   dist_px <- (unlist(scale_pt1)-unlist(scale_pt2))^2 %>% sum %>% sqrt #computing distance
   return(c(scale=dist_px/as.numeric(scale_value),
-           scale_value=scale_value)) #pixel per unit
+           scale_value=scale_value) %>% as.numeric) #pixel per unit
 }
 
 #' Accessory for redRulerScaler
@@ -131,7 +131,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
   if(msg) message("--- scaling - Segmenting ruler's tiles...")
   ruler_crop <- imager::crop.bbox(ruler_img, ruler_img==T) #cropped ruler
   ruler_neg <- ruler_crop %>% invert_grayscale #negative
-  seg_ruler <- gFastSeg(ruler_neg, min=1, max=100000000) #negative ruler segmentation
+  seg_ruler <- gFastSeg(ruler_neg, px_range=c(1,100000000), viz=FALSE) #negative ruler segmentation
   l_seg_r <- lapply(seg_ruler, nrow) %>% unlist #label's size
   median_threshold <- which(l_seg_r < 1.5 * median(l_seg_r) & l_seg_r > 0.5 * median(l_seg_r))
   seg_tiles <- seg_ruler[median_threshold] #removes label too big or too small

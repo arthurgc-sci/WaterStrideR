@@ -4,7 +4,7 @@
 \alias{gDetectionPlot}
 \title{Plot gerris position and id with 1cm scale on original image}
 \usage{
-gDetectionPlot(base_img, scale, x, y)
+gDetectionPlot(base_img, scale, x, y, auto_scale)
 }
 \arguments{
 \item{base_img}{c.img or pixset of base image}
@@ -12,6 +12,8 @@ gDetectionPlot(base_img, scale, x, y)
 \item{scale}{mean pixel amount for 1 micron}
 
 \item{x, y}{ordered position of individuals}
+
+\item{auto_scale}{boolean, TRUE if scale was produced by redRulerScale, FALSE if it was produced by getScale}
 }
 \description{
 Plot gerris position and id with 1cm scale on original image

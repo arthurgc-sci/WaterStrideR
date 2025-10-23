@@ -201,7 +201,7 @@ gPipeline <- function(# INPUT
     x_cen <- sapply(body_centroids, function(x) x[1])
     y_cen <- sapply(body_centroids, function(x) x[2])
     detection_plot <- function(){ #save arguments to be called later
-      gDetectionPlot(base_img=base_img, scale=scale[1], x=x_cen, y=y_cen)
+      gDetectionPlot(base_img=base_img, scale=scale, x=x_cen, y=y_cen, auto_scale=auto_scale)
     }
     # Individuals metrics plot
     i_plots <- lapply(seq_along(body_l_crops), function(i) {
