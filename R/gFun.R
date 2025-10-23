@@ -9,6 +9,8 @@
 #' @param viz boolean for visualization
 #' @export
 gFastSeg <- function(img_bin, px_range=c(300,1500), viz=TRUE){
+  min <- px_range[1]
+  max <- px_range[2]
   # 1 - global size threshold (keep bodies)
   lab <- imager::label(img_bin) #connected components detection on binary image
   lab_tab <- table(lab[lab>0]) #number of pixels of each white label
