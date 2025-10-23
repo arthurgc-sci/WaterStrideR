@@ -278,7 +278,7 @@ cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
       offset_matrix <- matrix(rep(offset, nrow(coords0)), ncol=2, byrow=T)
       coords <- coords0 + offset_matrix
       return(coords)
-    }, opened_body_img, body_lab_points, body_img)
+    }, opened_body_img, body_lab_points, body_img, SIMPLIFY=FALSE)
   }
   return(res)
 }

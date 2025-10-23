@@ -4,14 +4,14 @@
 \alias{gFastSeg}
 \title{Fast segmentation with size filter}
 \usage{
-gFastSeg(img_bin, min = 300, max = 1500)
+gFastSeg(img_bin, px_range = c(300, 1500), viz = TRUE)
 }
 \arguments{
 \item{img_bin}{a pixset}
 
-\item{min}{minimum number of pixels to keep label}
+\item{px_range}{numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand}
 
-\item{max}{maximum number of pixels to keep label}
+\item{viz}{boolean for visualization}
 }
 \description{
 Given a binary image as pixset, returns list of coordinates of every label with pixels in the min-max range

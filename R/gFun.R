@@ -5,10 +5,10 @@
 #'
 #' Given a binary image as pixset, returns list of coordinates of every label with pixels in the min-max range
 #' @param img_bin a pixset
-#' @param min minimum number of pixels to keep label
-#' @param max maximum number of pixels to keep label
+#' @param px_range numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand
+#' @param viz boolean for visualization
 #' @export
-gFastSeg <- function(img_bin, min=300, max=1500){
+gFastSeg <- function(img_bin, px_range=c(300,1500), viz=TRUE){
   # 1 - global size threshold (keep bodies)
   lab <- imager::label(img_bin) #connected components detection on binary image
   lab_tab <- table(lab[lab>0]) #number of pixels of each white label
@@ -22,6 +22,11 @@ gFastSeg <- function(img_bin, min=300, max=1500){
     which(lab == x, arr.ind = TRUE)[, 1:2]
   })
   names(body_lab_points) <- seq_along(body_lab_points) #names for indexation
+  if(viz){
+    plot(img_bin)
+    L_seg <- length(body_lab_points)
+    for(i in 1:L_seg) points(body_lab_points[[i]],col=rainbow(L_seg)[i],cex=.01)
+  }
   return(body_lab_points)
 }
 
@@ -165,7 +170,7 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=T, px_filter=25){
     res <- mapply(function(img_bin, cen){
       pb$tick()
       return( gCleanBin(img_bin, cen, as_coords) )
-    }, l_img_bin, centroid)
+    }, l_img_bin, centroid, SIMPLIFY=FALSE)
     return(res)
   }
   if(all(is.na(l_img_bin))) return(NA)
@@ -204,7 +209,7 @@ recropBodies <- function(body_coords, base_img, crop_coords){
     xrange <- crop[,1]; yrange <- crop[,2] #crop range
     body_crop <- imager::imsub(empty_base_img, x %inr% xrange, y %inr% yrange) #crop
     return(body_crop)
-  }, body_l_coords, crop_coords)
+  }, body_l_coords, crop_coords, SIMPLIFY=FALSE)
   return(body_l_crops)
 }
 

@@ -240,7 +240,7 @@ gBodyPredict <- function(img_data, angle, what){
   #Vectorization with safety
   if(is.list(img_data)){ #img_data is list
     ang_len <- length(angle)
-    if(ang_len > 1){ #angle has more than 1 element
+    if(ang_len == length(img_data)){ #angle has more than 1 element
       if(ang_len == length(img_data)){ #matching length
         valid <- !( sapply(angle, function(x) all(is.na(x))) |
                     sapply(img_data, function(x) all(is.na(x))) ) #non na points, boolean
@@ -269,7 +269,7 @@ gBodyPredict <- function(img_data, angle, what){
         stop("img_data and angle should have the same length")
       }
     } else { #img_data is list but only 1 angle is provided
-      stop("img_data is list but only 1 angle was provided") 
+      stop("img_data is list but do not have the same length as provided angle(s)") 
     }
   } else { #Predict single
     res <- gBodyPredict1(img=img_data, ang=angle, rs=rs, pca=pca, lda=lda)

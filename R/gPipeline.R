@@ -23,6 +23,7 @@
 #' of dilated body.
 #' @param k.leglm_search_w numerical. Distance (in number of points in contour) to use to compute leg contour angles
 #' @param k.leglm_splines_df numerical. Number of splines to fit leg contour angle variation
+#' @param k.body_size_px_range numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand
 #' @param f.red_thresh numerical in \code{[0, 1]}. Difference in intensity between red component
 #' and other components to detect the red ruler. Only relevant if auto_scale == TRUE
 #' @param f.clean_small_spots numerical. Minimal size (in number of pixels) allowed for a patch
@@ -65,6 +66,7 @@ gPipeline <- function(# INPUT
                       k.body_dilation_ratio = 0.3,
                       k.leglm_search_w = 6,
                       k.leglm_splines_df = 30,
+                      k.body_size_px_range = c(300,1500),
                       # b. Filters
                       f.red_thresh = 0.05,
                       f.clean_small_spots = 25,
@@ -81,7 +83,7 @@ gPipeline <- function(# INPUT
   img_bin <- binaryLoad(img_path,
                         threshold = k.bin_thresh) #load and binarize image
   #Segmenting image
-  body_lab_points <- gFastSeg(img_bin) #segmentation
+  body_lab_points <- gFastSeg(img_bin, px_range=k.body_size_px_range, viz=FALSE) #segmentation
   #Body base metrics
   body_length_pix <- unlist(lapply(body_lab_points, bodyLength)) #length in pixels of bodies
   body_centroids <- lapply(body_lab_points, function(i) { #body centroids
