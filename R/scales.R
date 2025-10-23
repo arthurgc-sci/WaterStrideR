@@ -85,7 +85,8 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
   graphics::segments(x0 = scale_pt1[[1]], y0 = scale_pt1[[2]], x1 = scale_pt2[[1]], y1 = scale_pt2[[2]],
            col = plot_col, lwd = 1)
   dist_px <- (unlist(scale_pt1)-unlist(scale_pt2))^2 %>% sum %>% sqrt #computing distance
-  return(dist_px/as.numeric(scale_value)) #pixel per unit
+  return(c(scale=dist_px/as.numeric(scale_value),
+           scale_value=scale_value)) #pixel per unit
 }
 
 #' Accessory for redRulerScaler

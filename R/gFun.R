@@ -468,7 +468,12 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' @param search_w an integer. Distance (in number of points in contour) to use to compute leg contour angles
 #' 
 #' @export
-gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0.12, viz=F, msg=T,
+gLegLandmarks <- function(leg_coords,
+                          insertion,
+                          inser_thresh=0.1,
+                          tresh_ankle=0.12,
+                          viz=F,
+                          msg=T,
                           inflexion_pts_range = c(5,7),
                           knee_diff_thresh = 0.2,
                           segment_length_range = c(0.15, 0.6),
@@ -485,10 +490,28 @@ gLegLandmarks <- function(leg_coords, insertion, inser_thresh=0.1, tresh_ankle=0
       pb$tick()
       list(
         left = if( !(all(is.na(leg$left))) | !(all(is.na(ins$left))) ){
-          gLegLandmarks(leg$left, ins$left, inser_thresh, tresh_ankle, viz, msg)
-        } else { NA } ,
+          gLegLandmarks(leg$left, ins$left, 
+                        inser_thresh = inser_thresh,           # ← Explicite
+                        tresh_ankle = tresh_ankle, 
+                        viz = viz, 
+                        msg = msg,
+                        inflexion_pts_range = inflexion_pts_range,
+                        knee_diff_thresh = knee_diff_thresh,
+                        segment_length_range = segment_length_range,
+                        n_splines = n_splines,
+                        search_w = search_w)
+        } else { NA },
         right = if( !(all(is.na(leg$right))) | !(all(is.na(ins$right))) ){
-          gLegLandmarks(leg$right, ins$right, inser_thresh, tresh_ankle, viz, msg)
+          gLegLandmarks(leg$right, ins$right, 
+                        inser_thresh = inser_thresh,
+                        tresh_ankle = tresh_ankle, 
+                        viz = viz, 
+                        msg = msg,
+                        inflexion_pts_range = inflexion_pts_range,
+                        knee_diff_thresh = knee_diff_thresh,
+                        segment_length_range = segment_length_range,
+                        n_splines = n_splines,
+                        search_w = search_w)
         } else { NA }
       )
     }, leg_coords, insertion, SIMPLIFY = FALSE)
@@ -628,7 +651,10 @@ gConnectLeg <- function(body, landmarks, viz=F){
   new_ins <- ins #new insertion value
   new_ins_round <- new_ins %>% round #new rounded insertion value to check pixel correspondence
   iterations <- 0 #cap the number of iterations
-  while( !overlapPoints(new_ins_round, body, coords=F) && iterations<100){ #if new point is not in body points
+  point_in_set <- function(pt, set) {
+    any(set[, 1] == pt[1] & set[, 2] == pt[2])
+  }
+  while( !point_in_set(new_ins_round, body) && iterations<2000){ #if new point is not in body points
     new_ins <- new_ins + v_u #new point for insertion moving towards body
     new_ins_round <- new_ins %>% round #round for search in discrete pixel body
     iterations <- iterations+1
@@ -644,7 +670,7 @@ gConnectLeg <- function(body, landmarks, viz=F){
     legend("bottomleft", legend = "Extended Leg", col = "maroon", lwd = 4)
   }
   #output
-  if(iterations==100){ #leg not connecting : most likely a landmarking error
+  if(iterations==2000){ #leg not connecting : most likely a landmarking error
     return( NA )
   } else {
     landmarks["insertion", ] <- new_ins

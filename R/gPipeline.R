@@ -95,7 +95,9 @@ gPipeline <- function(# INPUT
                          red_thresh = f.red_thresh) #get scale
   message("| \n3 - Computing body")
   body_length <- body_length_pix/scale[1] #conversion in mm
-  error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
+  if(auto_scale){
+    error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
+  } else error_margin <- NA
   #clean bodies
   clean_body_points <- cleanBodyShape(body_lab_points,
                                       kernel_size = k.clean_kernel)
