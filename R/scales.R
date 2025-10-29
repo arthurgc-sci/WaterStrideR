@@ -55,17 +55,17 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
   #1 - Get scale value
   if(is.na(scale_value)){ #manual scale value in R console
     repeat{
-      scale_value <- readline(prompt = "📐 Enter scale value: ")
+      scale_value <- readline(prompt = "\U1F4D0 Enter scale value: ")
       num <- suppressWarnings(as.numeric(scale_value)) #NA if not a number
       if(!is.na(num)){ #if input is a number
         if(num > 0){ #if it's positive
           break
         }
       }
-      cat("❌ Please enter a positive number") 
+      cat("\u274C Please enter a positive number") 
     }
   } else if(!is.numeric(scale_value) || length(scale_value) != 1){ #if not a number
-    stop("❌ scale_value must be a single numeric value")
+    stop("\u274C scale_value must be a single numeric value")
   }
   # 2 - Get scale pixel size
   if(!openGrDevice(title = "Click two points to set scale (this window can then be closed)")){ #opening interactive windows to bypass errors with locator() in Rstudio plot
@@ -73,7 +73,7 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
     If you are using Rstudio please set
     Tools>Global options>Appearance>Zoom = 100%") #using local plot if opening graphic device fails
   }
-  cex_min=cex_max*.6 #colored point size (20% black outline)
+  cex_min <- cex_max*.6 #colored point size (20% black outline)
   par(mar=rep(0,4))
   plot(img, ann=FALSE, asp=1)
   scale_pt1 <- graphics::locator(1) #click point on image
@@ -82,7 +82,8 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
   scale_pt2 <- graphics::locator(1)
   points(scale_pt2, pch=16, col=1, cex=cex_max)
   points(scale_pt2, pch=16, col=plot_col, cex=cex_min)
-  graphics::segments(x0 = scale_pt1[[1]], y0 = scale_pt1[[2]], x1 = scale_pt2[[1]], y1 = scale_pt2[[2]],
+  graphics::segments(x0 = scale_pt1[[1]], y0 = scale_pt1[[2]],
+                     x1 = scale_pt2[[1]], y1 = scale_pt2[[2]],
            col = plot_col, lwd = 1)
   dist_px <- (unlist(scale_pt1)-unlist(scale_pt2))^2 %>% sum %>% sqrt #computing distance
   return(c(scale=dist_px/as.numeric(scale_value),
@@ -114,7 +115,7 @@ nZeros <- function(text, zeros=1){
 #' @param viz logical. visualization option
 #' @param msg logical. console message option
 #' @export
-redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F, msg=T){
+redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FALSE, msg=TRUE){
   # Get ruler as the biggest set of red pixels from the image
   if(msg) message("--- scaling - Extracting ruler...")
   IR <- correct_illumination(imager::R(img)) #RGB components with linear correction of illumination
@@ -129,7 +130,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
   
   # Get indivual tiles from the ruler
   if(msg) message("--- scaling - Segmenting ruler's tiles...")
-  ruler_crop <- imager::crop.bbox(ruler_img, ruler_img==T) #cropped ruler
+  ruler_crop <- imager::crop.bbox(ruler_img, ruler_img==TRUE) #cropped ruler
   ruler_neg <- ruler_crop %>% invert_grayscale #negative
   seg_ruler <- gFastSeg(ruler_neg, px_range=c(1,100000000), viz=FALSE) #negative ruler segmentation
   l_seg_r <- lapply(seg_ruler, nrow) %>% unlist #label's size
@@ -155,7 +156,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
   
   # Get mean distance (pixels) between two adjacent tiles (mm)
   if(msg) message("--- scaling - Computing scale...")
-  d_hist <- hist(distances, breaks = 500, plot=F) #inbetween tiles distances histogram
+  d_hist <- hist(distances, breaks = 500, plot=FALSE) #inbetween tiles distances histogram
   counts_spiked <- spikePlateau(d_hist$counts) #add 'spikes' because pracma::findpeaks does not detect flat peaks, which can frequently happen in histograms
   h_peaks <- pracma::findpeaks(counts_spiked, threshold = 0.2 * max(counts_spiked)) #histogram peaks
   h_thresh <- d_hist$mids[h_peaks[1:2, 2]] %>% mean #mean value between the first two peaks, used as threshold to select 1st peaks surrounding values
@@ -168,7 +169,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
   if(viz){
     par(mfrow=c(1,2))
     plot(tile_pos, pch=16, cex=0.5, asp=1) #tiles centroids
-    plot(d_hist, freq = T, xlim = c(0, max(distances)/5)) #distance histogram
+    plot(d_hist, freq = TRUE, xlim = c(0, max(distances)/5)) #distance histogram
     points(d_hist$mids[h_peaks[, 2]], h_peaks[, 1], col = "red", pch = 19, cex = 1.5) #plotted peaks
     par(mfrow=c(1,1))
   }
@@ -180,7 +181,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
     e_subp <- gsub("\\.", "", e_same_exp)
     n_zeros <- nZeros(e_subp)
     e_margin_format <- paste0("0.", substring(e_subp, 2, n_zeros+1), "e-0", abs(exp_main))
-    cat('1 \u00b5m =', format(unit_dist_mean , scientific=T, digits=3), #unicode for characters
+    cat('1 \u00b5m =', format(unit_dist_mean , scientific=TRUE, digits=3), #unicode for characters
         "\u00B1", e_margin_format,'px \n')
   }
   return(c("scale" = unit_dist_mean, "error" = e_margin))
@@ -194,7 +195,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=F,
 #' and other components to detect the red ruler
 pipelineScale <- function(img, auto_scale, red_thresh=0.05){
   if(auto_scale){
-    scale <- redRulerScale(img, msg=F, red_thresh=red_thresh) #get scale
+    scale <- redRulerScale(img, msg=FALSE, red_thresh=red_thresh) #get scale
   } else {
     scale1 <- getScale(img)
     scale <- c(scale1, NA) #no error margin : not yet implemented here    

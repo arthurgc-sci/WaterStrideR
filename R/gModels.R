@@ -22,7 +22,7 @@ loadModel <- function(model_name) {
 #' @param nb_h a numerical integer. number of elliptuc fourier harmonics to compute
 #' @param viz visualization option, additionally returns 3 plots
 #' @export
-scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
+scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7, viz=FALSE){
   na_ang <- ori_angle %>% is.na #valid angle boolean
   if(sum(na_ang) != 0){ #if there is na angles
     ori_angle_c <- ori_angle[!na_ang] #analysis on valid data only
@@ -33,7 +33,7 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
   }
   body_cont <- img_bin_c %>% simpleCont #cleaned body contour
   body_cont_mat <- lapply(body_cont, function(x){ #format contours for Momocs
-    x <- x[c(1:nrow(x),1),] #close contour
+    x <- x[c(seq_len(nrow(x)),1),] #close contour
     x <- x %>% as.matrix #as matrix
     return(x)
   })
@@ -46,7 +46,7 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
   cent_cont <- lapply(rot_cont ,centerContour) #center
   outs <- Momocs::Out(cent_cont) #outline Momocs object
   scale_cont <- outs %>% Momocs::coo_scale() #scale
-  efa <- scale_cont %>% Momocs::efourier(nb.h=nb_h, norm=T) #elliptic fourier analysis
+  efa <- scale_cont %>% Momocs::efourier(nb.h=nb_h, norm=TRUE) #elliptic fourier analysis
   efa_pca <- prcomp(efa$coe) #principal components analysis
   if(viz){ #visualization
     par(mfrow=c(1,1))
@@ -65,10 +65,12 @@ scoresEFA <- function(img_bin, ori_angle=rep(0,length(img_bin)), nb_h=7 ,viz=F){
   return(df_scores)
 }
 
+# FULL MASS IMPORT REQUIRED SINCE predict.lda IS NOT EXPORTED FROM MASS
 #' Predict factor using LDA model on harmonic fourier principal components
 #'
 #' @param LDA_model LDA model created with MASS, trained on PCA output
 #' @param hPCA_scores harmonic fourier principal components as output of prcomp
+#' @import MASS
 #' @export
 gPredictLDA <- function(LDA_model, hPCA_scores){
   if(!inherits(LDA_model, "lda")) stop("LDA_model should be an object of class lda")
@@ -161,7 +163,7 @@ normBody <- function(img_bin, ori_angle){
   if(!is.numeric(ori_angle)) stop("ori_angle should be a number o list of numbers")
   #FX
   body_cont <- img_bin %>% simpleCont #cleaned body contour
-  body_cont_mat <- body_cont[c(1:nrow(body_cont), 1), ] # Close contour
+  body_cont_mat <- body_cont[c(seq_along(body_cont), 1), ] # Close contour
   body_cont_mat <- body_cont_mat %>% as.matrix # As matrix, format for Momocs
   cos_a <- cos(ori_angle) # Rotation matrix using detected orientation
   sin_a <- sin(ori_angle)

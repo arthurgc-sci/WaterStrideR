@@ -51,12 +51,12 @@
 gPipeline <- function(# INPUT
                       img_path,
                       # OUTPUT
-                      write_output=T,
-                      return_df=T,
-                      single_write=T,
-                      auto_scale=T,
-                      predict_sex_wing=T,
-                      return_everything=F,
+                      write_output=TRUE,
+                      return_df=TRUE,
+                      single_write=TRUE,
+                      auto_scale=TRUE,
+                      predict_sex_wing=TRUE,
+                      return_everything=FALSE,
                       # In-pipeline parameters
                       # a. Key variables
                       k.bin_thresh = 0.8,
@@ -102,9 +102,9 @@ gPipeline <- function(# INPUT
   clean_body_points <- cleanBodyShape(body_lab_points,
                                       kernel_size = k.clean_kernel)
   #Remove bodies
-  im_nobodies <- gNobody(base_img = base_img, body_lab_points = clean_body_points, viz=F)
+  im_nobodies <- gNobody(base_img = base_img, body_lab_points = clean_body_points, viz=FALSE)
   #Size based ind crop
-  l_crop <- gCrop(im_nobodies, body_centroids, body_length_pix, viz = F,
+  l_crop <- gCrop(im_nobodies, body_centroids, body_length_pix, viz = FALSE,
                   factor = k.crop_size_factor)
   #Fit GMM to image values
   message("| \n4 - Individual thresholding")
@@ -115,10 +115,10 @@ gPipeline <- function(# INPUT
   body <- body_l_crops %>% imgAsCoords #body as coordinates, same reference as dilcont
   cen <- lapply(body, function(x){ apply(x,2,mean) }) #new centroids
   #GMM threshold
-  l_cropbin <- gGMMThresh(l_crop$img, msg=F,
+  l_cropbin <- gGMMThresh(l_crop$img, msg=FALSE,
                           y_root = k.gmm_slope_value)
   #Clean data
-  full <- gCleanBin(l_cropbin, cen, as_coords=F,
+  full <- gCleanBin(l_cropbin, cen, as_coords=FALSE,
                     px_filter = f.clean_small_spots)
   
   message("| \n5 - Orienting individuals")
@@ -147,7 +147,7 @@ gPipeline <- function(# INPUT
                   insertions = inser)
   message("| \n7 - Leg landmarking & measurement")
   #7 - Get Points of interest from leg
-  leg_lm0 <- gLegLandmarks(leg_coords = legs, insertion = inser, viz=F, msg=F,
+  leg_lm0 <- gLegLandmarks(leg_coords = legs, insertion = inser, viz=FALSE, msg=FALSE,
                            search_w = k.leglm_search_w,
                            n_splines = k.leglm_splines_df,
                            inser_thresh = f.leg_inser_thresh,
@@ -238,24 +238,24 @@ gPipeline <- function(# INPUT
 #'  True : a directory is created for the current image, containing plots and dataframe
 #'  False : a single 'out' directory with all plots is created for the current directory
 #'  ,gMultiPipeline is supposed to take in charge the creation of the dataframe
-gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, single_write=T){
+gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, single_write=TRUE){
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
                          basename(img_path), ignore.case = TRUE)
   if(single_write){
     local_dir <- paste0(dirname(img_path),"/out_", clean_base_path) #solo directory
     iplot_dir <- paste0(local_dir,"/individuals_",clean_base_path)
-    create_dir(local_dir, msg=F)
-    create_dir(iplot_dir, msg=F) #individuals dir
+    create_dir(local_dir, msg=FALSE)
+    create_dir(iplot_dir, msg=FALSE) #individuals dir
     dplot_path <- paste0(local_dir,"/detection_",clean_base_path,".png")
     df_path <- paste0(local_dir,"/data_",clean_base_path,".csv")
     write.table(df_out, file = df_path, row.names = FALSE, sep=";") 
   } else { #multi image processing, usually with gMultiPipeline
     out_dir <- paste0(dirname(img_path),"/out_",basename(dirname(img_path))) #output directory name
-    create_dir(out_dir, msg=F) #create if not already done
+    create_dir(out_dir, msg=FALSE) #create if not already done
     dplot_dir <- paste0(out_dir,"/detection")
-    create_dir(dplot_dir, msg=F)
+    create_dir(dplot_dir, msg=FALSE)
     iplot_dir <- paste0(out_dir,"/individuals_",clean_base_path)
-    create_dir(iplot_dir, msg=F) #individuals dir
+    create_dir(iplot_dir, msg=FALSE) #individuals dir
     dplot_path <- paste0(dplot_dir,"/detection_",clean_base_path,".png")
     #global dataframe will be created in gMultiPipeline
   }
@@ -290,12 +290,14 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
   message(paste0("Running pipeline for ", img_path_length, " images \n_____________________________"))
   #Run pipeline for each image
   for(img_path_i in 1:img_path_length){
-    clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "", basename(img_path_list[img_path_i]), ignore.case = TRUE)
-    message(paste0("\n  ",img_path_i,"/",img_path_length, " - Processing image \"",clean_base_path,"\"\n  |"))
+    clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
+                           basename(img_path_list[img_path_i]), ignore.case = TRUE)
+    message(paste0("\n  ",img_path_i,"/",img_path_length,
+                   " - Processing image \"",clean_base_path,"\"\n  |"))
     pipe_result <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
-              write_output=T,
-              return_df=T, #return dataframe of each image analysis
-              single_write=F, #writing format for whole directory
+              write_output=TRUE,
+              return_df=TRUE, #return dataframe of each image analysis
+              single_write=FALSE, #writing format for whole directory
               ...) #gPipeline arguments
     if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
   }
@@ -322,7 +324,7 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
-gRunPipeline <- function(img_path, return_df=T, ...){
+gRunPipeline <- function(img_path, return_df=TRUE, ...){
   #1 check if path is an image
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
   if( grepl(img_pattern, img_path, ignore.case = TRUE) ){ #if provided path is a single img path
@@ -338,8 +340,9 @@ gRunPipeline <- function(img_path, return_df=T, ...){
       if( !file.info(img_path)$isdir ) { #path valid but not a directory
         message(paste0(img_path, " is not an image or a directory"))
       } else { #path is a valid dir
-        lf <- list.files(img_path, pattern=img_pattern, ignore.case=T, full.names=T) #img paths of the dir
-        llf=length(lf)
+        lf <- list.files(img_path, pattern=img_pattern,
+                         ignore.case=TRUE, full.names=TRUE) #img paths of the dir
+        llf <- length(lf)
         if(llf==0){
           message(paste0(img_path, " is a valid directory but does not contain any image"))
         } else if(llf==1){
@@ -376,7 +379,7 @@ gOneLeg <- function(df_result){
   both_leg <- l_na & r_na #get both
   df_leg_choice <- data.frame(both_leg,left_leg,right_leg)
   
-  new_leg_l <- lapply(1:nrow(df_result), function(i){
+  new_leg_l <- lapply(seq_len(nrow(df_result)), function(i){
     if(df_leg_choice[i,"both_leg"]){
       matrix_data <- cbind(as.numeric(lleg$R[i,]), as.numeric(lleg$L[i,]))
       as.numeric(rowMeans(matrix_data))

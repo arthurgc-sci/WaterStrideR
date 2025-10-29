@@ -4,7 +4,7 @@
 \alias{cleanBodyShape}
 \title{Clean body shape as xy coordinates using morphological closing following by opening}
 \usage{
-cleanBodyShape(body_lab_points, kernel_size = 3, as_coords = T)
+cleanBodyShape(body_lab_points, kernel_size = 3, as_coords = TRUE)
 }
 \arguments{
 \item{body_lab_points}{body points as numerical matrix or dataframe}

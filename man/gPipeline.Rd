@@ -6,12 +6,12 @@
 \usage{
 gPipeline(
   img_path,
-  write_output = T,
-  return_df = T,
-  single_write = T,
-  auto_scale = T,
-  predict_sex_wing = T,
-  return_everything = F,
+  write_output = TRUE,
+  return_df = TRUE,
+  single_write = TRUE,
+  auto_scale = TRUE,
+  predict_sex_wing = TRUE,
+  return_everything = FALSE,
   k.bin_thresh = 0.8,
   k.clean_kernel = 3,
   k.crop_size_factor = 3.5,

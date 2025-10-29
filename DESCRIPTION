@@ -4,7 +4,7 @@ Version: 0.3.4
 Authors@R: 
     person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre"))
 Description: Image analysis, statistical, logical tools and pipeline for leg measurement, sex and wing prediction of Microvelia longipes (Hemiptera, Gerroidea, Veliidae) from images including multiple individuals. Scaling is automatized if the image include a millimetric orange-red ruler.
-License: GPL-3
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

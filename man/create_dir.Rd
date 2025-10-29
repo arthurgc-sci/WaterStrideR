@@ -4,7 +4,7 @@
 \alias{create_dir}
 \title{Create directory}
 \usage{
-create_dir(name, msg = T)
+create_dir(name, msg = TRUE)
 }
 \arguments{
 \item{name}{a string. name and path of the directory to create}

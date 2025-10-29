@@ -4,7 +4,7 @@
 \alias{gCrop}
 \title{Crop individual gerris}
 \usage{
-gCrop(base_img, centroids, sizes, viz = F, factor = 3.5)
+gCrop(base_img, centroids, sizes, viz = FALSE, factor = 3.5)
 }
 \arguments{
 \item{base_img}{c.img. Base image suitable for waterstrider pipeline}

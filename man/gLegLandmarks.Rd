@@ -9,8 +9,9 @@ gLegLandmarks(
   insertion,
   inser_thresh = 0.1,
   tresh_ankle = 0.12,
-  viz = F,
-  msg = T,
+  viz = FALSE,
+  viz_angle = FALSE,
+  msg = TRUE,
   inflexion_pts_range = c(5, 7),
   knee_diff_thresh = 0.2,
   segment_length_range = c(0.15, 0.6),
@@ -33,7 +34,9 @@ angular points too close to the leg insertion point
 the difference between the two knee-ankle distances is realistically acceptable
 (value as fraction of half contour length)}
 
-\item{viz}{logical. visualization option}
+\item{viz}{logical. visualization of landmark positionning and peak along contour distance profile}
+
+\item{viz_angle}{a boolean. For diagnostic plots of leg contour angle variation and peak fitting}
 
 \item{msg}{logical. message option}
 

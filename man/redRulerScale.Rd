@@ -8,8 +8,8 @@ redRulerScale(
   img,
   red_thresh = 0.05,
   confidence_interval = 0.95,
-  viz = F,
-  msg = T
+  viz = FALSE,
+  msg = TRUE
 )
 }
 \arguments{

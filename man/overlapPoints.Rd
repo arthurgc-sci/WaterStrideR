@@ -4,7 +4,7 @@
 \alias{overlapPoints}
 \title{With 2 lists of discrete 2D points : which points from set_a are in set_b}
 \usage{
-overlapPoints(set_a, set_b, coords = T, index = T)
+overlapPoints(set_a, set_b, coords = TRUE, index = TRUE)
 }
 \arguments{
 \item{set_a}{a numerical matrix of 2D points}

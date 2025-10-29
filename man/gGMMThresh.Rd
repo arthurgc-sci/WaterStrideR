@@ -4,7 +4,7 @@
 \alias{gGMMThresh}
 \title{Binarize gerris using GMM derivative}
 \usage{
-gGMMThresh(gerris_crops, nG = 2, noise_n = 0.005, y_root = -25, msg = T)
+gGMMThresh(gerris_crops, nG = 2, noise_n = 0.005, y_root = -25, msg = TRUE)
 }
 \arguments{
 \item{gerris_crops}{c.img or list of c.img of cropped binary individuals}

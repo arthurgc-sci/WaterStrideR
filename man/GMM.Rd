@@ -4,7 +4,7 @@
 \alias{GMM}
 \title{GMM 'V' using Mclust}
 \usage{
-GMM(img_val, n = 1:9, keep_max = T, viz = F, n_noise_sd = 0)
+GMM(img_val, n = 1:9, keep_max = TRUE, viz = FALSE, n_noise_sd = 0)
 }
 \arguments{
 \item{img_val}{numerical gray values of an image}

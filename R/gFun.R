@@ -70,7 +70,7 @@ gDetectionPlot <- function(base_img, scale, x, y, auto_scale){
 #'
 #' @return A list of numeric vectors of length 4 (xmin, xmax, ymin, ymax) representing the cropped bounding boxes.
 #'
-cropPoints = function(list_points, list_size, scaling_factor=1){
+cropPoints <- function(list_points, list_size, scaling_factor=1){
   out <- mapply(function(pt, dia){
     crop_points <- sapply(pt, function(x) rep(x,2)) + c(-0.5,0.5,-0.5,0.5)*dia
   }, list_points, list_size*scaling_factor, SIMPLIFY = FALSE)
@@ -90,7 +90,7 @@ cropPoints = function(list_points, list_size, scaling_factor=1){
 #' @param factor numerical. Numerical value for crop size relative to individual's body length
 #'
 #' @export
-gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
+gCrop <- function(base_img, centroids, sizes, viz=FALSE, factor=3.5){
   #Error handling
   if(!imager::is.cimg(base_img)) stop("Error : base_img must be of type c.img")
   if(!is.list(centroids)) stop("Error : centroids must be a list")
@@ -103,6 +103,8 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
   res <- lapply(crop_points, function(crop_pt_df){
     xrange <- crop_pt_df[,1]
     yrange <- crop_pt_df[,2]
+    x <- NA
+    y <- NA #avoid warnings in devtools::check() and goodpractice::gp()
     crop <- imager::imsub(base_img, x %inr% xrange, y %inr% yrange)
     crop[which(crop==1)] <- max(crop[which(crop!=1)])
     out <- crop %>% imager::grayscale() %>% invert_grayscale #%>% correct_illumination #TODO handle ruler > R(img) negatively impact global segmentation performance
@@ -135,7 +137,7 @@ gCrop <- function(base_img, centroids, sizes, viz=F, factor=3.5){
 #' @param viz logical.visualization option
 #'
 #' @export
-gNobody <- function(base_img, body_lab_points, viz=F){
+gNobody <- function(base_img, body_lab_points, viz=FALSE){
   #Error handling
   if(!is.matrix(body_lab_points) & !is.list(body_lab_points) & !is.matrix(body_lab_points)) stop("Error : body_lab_points should be a list of dataframes, a dataframe or a matrix")
   if(!imager::is.cimg(base_img)) stop("Error : base_img must be of type c.img")
@@ -162,7 +164,7 @@ gNobody <- function(base_img, body_lab_points, viz=F){
 #' @param as_coords A boolean
 #' @param px_filter A numerical. Minimum amount pixel to keep label 
 #' @export
-gCleanBin <- function(l_img_bin, centroid, as_coords=T, px_filter=25){
+gCleanBin <- function(l_img_bin, centroid, as_coords=TRUE, px_filter=25){
   if(!is.list(l_img_bin)){
     if(all(is.na(l_img_bin)) | all(is.na(centroid))) { return(NA) }
     if(!imager::is.cimg(l_img_bin) & !imager::is.pixset(l_img_bin)) {
@@ -216,6 +218,8 @@ recropBodies <- function(body_coords, base_img, crop_coords){
   body_l_crops <- mapply(function(body, crop){ #crop them with the same crop as for the legs to preserve coordinates
     empty_base_img[body] <- 1 #only fill the specific individuals point to avoid overlap related issues
     xrange <- crop[,1]; yrange <- crop[,2] #crop range
+    x <- NA
+    y <- NA #avoid warnings in devtools::check() and goodpractice::gp()
     body_crop <- imager::imsub(empty_base_img, x %inr% xrange, y %inr% yrange) #crop
     return(body_crop)
   }, body_l_coords, crop_coords, SIMPLIFY=FALSE)
@@ -235,7 +239,7 @@ dilBodies <- function(body_img, body_length, dilation_ratio=0.3){
       res <- mapply(function(im, l){
         dilBodies(im, l, dilation_ratio=dilation_ratio)
       }
-      , body_img, body_length, SIMPLIFY = F) #vectorization
+      , body_img, body_length, SIMPLIFY = FALSE) #vectorization
       return(res)
     } else {
       stop("Wrong formats for body_img or body_length in dilBodies()")
@@ -258,7 +262,7 @@ dilBodies <- function(body_img, body_length, dilation_ratio=0.3){
 #' @param diag a logical for output analysis diagnostic messages
 #' 
 #' @export
-gOrientation <- function(body_coords, intersection_coords, diag=F){
+gOrientation <- function(body_coords, intersection_coords, diag=FALSE){
   if(is.list(body_coords) & is.list(intersection_coords)){
     return(mapply(gOrientation, body_coords, intersection_coords)) #list iteration
   }
@@ -291,51 +295,6 @@ gOrientation <- function(body_coords, intersection_coords, diag=F){
   return(angle)
 }
 
-
-#' Accessory logical for boolSeqLim
-#' 
-#' @param x0 logical vector
-#' @param x1 logical vector
-#' @keywords internal
-bool_first <- function(x0,x1){
-  if(x0==0 & x1==1){T} else {F}
-}
-
-#' Accessory logical for boolSeqLim
-#'
-#' @param x0 logical vector
-#' @param x1 logical vector
-#' @keywords internal
-bool_last <- function(x0,x1){
-  if(x0==1 & x1==0){T} else {F}
-}
-
-#' Interval of all True/1 sequence in boolean vector
-#'
-#' Give matching index of first and last True values of sequences of True in v
-#' 
-#' @param v a vector of logical values
-#' @param circular a logical for prior assumption of circularity of v 
-#' 
-#' @export
-boolSeqLim <- function(v, circular = T){ #circular :
-  l_v <- length(v)
-  if(circular){
-    v0 <- c(v[l_v],v) # v
-    v1 <- c(v,v[1]) # v+1
-  } else {
-    stop("Non-circular boolSeqLim not implemented yet")
-  }
-  first <- mapply(bool_first, v0, v1)[-(l_v+1)] #which 0 are followed by 1
-  last <- mapply(bool_last, v0, v1)[-1] #which 1 are followed by 0
-  i_first <- which(first) #as index
-  i_last <- which(last)
-  if(i_last[1] < i_first[1]){ #match both lists
-    i_last <- c(i_last[-1], i_last[1]) #first id in last position
-  }
-  return(list("first" = i_first, "last" = i_last))
-}
-
 #' Gerris limbs intersection points
 #'
 #' For v a boolean of intersection points in the contour, assume limb intersections as continuous sequences
@@ -345,7 +304,7 @@ boolSeqLim <- function(v, circular = T){ #circular :
 #'
 #' @export
 gLimbInter <- function(v){
-  seq_lim <- boolSeqLim(v, circular=T)#Interval of all True/1 sequence in boolean vector
+  seq_lim <- boolSeqLim(v, circular=TRUE)#Interval of all True/1 sequence in boolean vector
   f <- seq_lim$first #first point of each sequence
   l <- seq_lim$last #last
   mid <- ((f + l)/2) %>% round #middle point assuming no circularity and matching l & f
@@ -376,7 +335,7 @@ gLimbInter <- function(v){
 gLegInsertion <- function(ori_angle, dil_contour, inter_index,
                           leg_lim_ratio=c(0.25, 0.6)){
   if(is.list(dil_contour) & is.list(inter_index)){
-    res <- mapply(gLegInsertion, ori_angle, dil_contour, inter_index, SIMPLIFY=F)
+    res <- mapply(gLegInsertion, ori_angle, dil_contour, inter_index, SIMPLIFY=FALSE)
     return(res)
   }
   if(is.na(ori_angle) | sum(inter_index)==0) return(list(left=NA, right=NA)) #NA if no angle or no intersection
@@ -424,7 +383,7 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
     res <- mapply(function(a,b,c,d){
       pb$tick()
       return(gLegSeg(a,b,c,d))
-    } , gerris, dilated_body, intersection_coords, insertions, SIMPLIFY = F)
+    } , gerris, dilated_body, intersection_coords, insertions, SIMPLIFY = FALSE)
     return(res)
   }
     # find limbs
@@ -436,7 +395,7 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
   leg_split_id <- lapply(insertions, function(inser){ #for each hind leg insertion point :
     tryCatch({
       lapply(split_limbs, function(x){ #for each limb as xy coordinates :
-        overlapPoints(inser, x, coords=F) == T #check if limb is connected to hind leg insertion
+        overlapPoints(inser, x, coords = FALSE) == TRUE #check if limb is connected to hind leg insertion
       })}, error = function(e) { NA } #error handling
     )  %>% unlist %>% which #return as index
   })
@@ -463,7 +422,8 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' @param tresh_ankle Numerical value in range 0:1 for threshold to detect if
 #' the difference between the two knee-ankle distances is realistically acceptable 
 #' (value as fraction of half contour length)
-#' @param viz logical. visualization option
+#' @param viz logical. visualization of landmark positionning and peak along contour distance profile
+#' @param viz_angle a boolean. For diagnostic plots of leg contour angle variation and peak fitting
 #' @param msg logical. message option
 #' @param inflexion_pts_range vector of two integers. Tolerated range of inflexion points on leg contour
 #' @param knee_diff_thresh numerical in \code{[0, 1]}. 
@@ -479,8 +439,9 @@ gLegLandmarks <- function(leg_coords,
                           insertion,
                           inser_thresh=0.1,
                           tresh_ankle=0.12,
-                          viz=F,
-                          msg=T,
+                          viz=FALSE,
+                          viz_angle=FALSE,
+                          msg=TRUE,
                           inflexion_pts_range = c(5,7),
                           knee_diff_thresh = 0.2,
                           segment_length_range = c(0.15, 0.6),
@@ -488,17 +449,19 @@ gLegLandmarks <- function(leg_coords,
                           search_w = 6) {
   
   if(is.null(insertion) | all(is.na(insertion)) |
-     is.null(leg_coords) | all(is.na(leg_coords)) | length(leg_coords)==2){
+     is.null(leg_coords) | all(is.na(leg_coords))){ # | length(leg_coords)==2 ???
+    if(msg) message("FAILED TO RECOGNIZE ADEQUATE TYPES")
     return(NA)
   } #Na handling
   if(!("dim1" %in% names(insertion))){  #Vectorization assuming nesting "left" "right" structure
+    if(msg) message("Attempting vectorization with $left and $right list structure")
     pb <- progress::progress_bar$new(total = length(leg_coords))
     res <- mapply(function(leg, ins){
       pb$tick()
       list(
         left = if( !(all(is.na(leg$left))) | !(all(is.na(ins$left))) ){
           gLegLandmarks(leg$left, ins$left, 
-                        inser_thresh = inser_thresh,           # ← Explicite
+                        inser_thresh = inser_thresh,           # Explicit
                         tresh_ankle = tresh_ankle, 
                         viz = viz, 
                         msg = msg,
@@ -527,18 +490,23 @@ gLegLandmarks <- function(leg_coords,
   }
 
   #0 - Contour and contour angles
-  leg_img <- coordsAsImg(leg_coords, padding=2, return_offset=T) #image conversion for contour algorithm
+  leg_img <- coordsAsImg(leg_coords, padding=2, return_offset=TRUE) #image conversion for contour algorithm
   leg_cont_offset <- simpleCont(leg_img$img) #contour of image with offset
-  cont <- leg_cont_offset + matrix(leg_img$coord_offset[1,], nrow=nrow(leg_cont_offset), ncol=2, byrow=TRUE) #offset correction
-  peaks <- tryCatch({contourTurns(cont, search_w = search_w, splines_df = n_splines)}, #contour angles
+  cont <- leg_cont_offset + matrix(leg_img$coord_offset[1,],
+                                   nrow=nrow(leg_cont_offset), ncol=2, byrow=TRUE) #offset correction
+  peaks <- tryCatch({contourTurns(cont, search_w = search_w,
+                                  splines_df = n_splines, viz = viz_angle)}, #contour angles
            error = function(e) {
              if(msg) message("contourTurns() failed : ", e$message)
              return(NULL)
            })
-  if(all(is.null(peaks))) { return(NA) }
+  if(all(is.null(peaks))) {
+    if(msg) message("no peak found")
+    return(NA)
+  }
   # 1 - Find insertion
   lcont <- nrow(cont) #n points of contour
-  inser_id <- overlapPoints(cont, insertion, coords=F) %>% which #insertion id in leg contour
+  inser_id <- overlapPoints(cont, insertion, coords=FALSE) %>% which #insertion id in leg contour
   reord <- (inser_id:(inser_id + lcont-1)) %% lcont +1#contour index insertion points as origin
   cont_inser <- rbind(cont[reord,], cont[reord[1],]) #cicular contour
   peaks_inser <- sapply(peaks, function(x) which(reord %in% x)) %>% sort
@@ -551,7 +519,7 @@ gLegLandmarks <- function(leg_coords,
   dist_peaks <- list(dist_peaks_str, dist_peaks_rev)
   if(length(peaks_inser) >= min(inflexion_pts_range) &&
      length(peaks_inser) <= max(inflexion_pts_range)){ #incoherent number of inflexion points
-    check_detection <- T
+    check_detection <- TRUE
     #2 Ignore inflexion points too close to the insertion, as they probably correspond to the inflexion
     cont_half_l <- dist_cont/2 #leg contour half length
     filt_id <- lapply(dist_peaks, function(x) (x >= cont_half_l*inser_thresh))#filtered id in dist_peaks & peaks_inser
@@ -577,14 +545,23 @@ gLegLandmarks <- function(leg_coords,
         ankle_dist2 <- mapply(function(x,y,z) {x[y][z]}, dist_peaks, filt_id, c(3,2)) #distance between points 1-2(straight contour) and 1-3(reverse contour)
         option1 <- (diff(ankle_dist1-knee_dist) %>% abs / cont_half_l) < tresh_ankle #knee-ankle distances is above tresh_ankle% of half contour length
         option2 <- (diff(ankle_dist2-knee_dist) %>% abs / cont_half_l) < tresh_ankle  #knee-ankle distances is above tresh_ankle% of half contour length
-        if(is.na(option1)){ option1 <- F }
-        if(is.na(option2)){ option2 <- F }
+        if(is.na(option1)){ option1 <- FALSE }
+        if(is.na(option2)){ option2 <- FALSE }
         if(option1) { ankle_dist <- ankle_dist1 }
         else if(option2) { ankle_dist <- ankle_dist2 }
-        else { check_detection <- F } #incoherent knee-ankle distance
+        else {
+          if(msg) message("incoherent knee-ankle distance")
+          check_detection <- FALSE
+        } #incoherent knee-ankle distance
       }
-    } else { check_detection <- F } #incoherent knee distances
-  } else { check_detection <- F } #incoherent number of inflexion points
+    } else {
+      if(msg) message("incoherent knee distances")
+      check_detection <- FALSE
+    } #incoherent knee distances
+  } else {
+    if(msg) message("incoherent number of inflexion points")
+    check_detection <- FALSE
+  } #incoherent number of inflexion points
   if(check_detection){ #sucessful detection of components
     knee_pts <- do.call(rbind, filt_cont_pts)
     ankle_pts <- cont_inser[names(ankle_dist) %>% as.numeric, ]
@@ -595,6 +572,7 @@ gLegLandmarks <- function(leg_coords,
     })
     if( all(segment_lengths < min(segment_length_range) |
             segment_lengths > max(segment_length_range)) ){ #incoherent segment sizes relative to contour
+      if(msg) message("incoherent segment sizes relative to contour")
       return(NA)
     }
     if(viz){
@@ -636,7 +614,7 @@ gLegLandmarks <- function(leg_coords,
 #' @param viz logical.visualization option
 #' 
 #' @export
-gConnectLeg <- function(body, landmarks, viz=F){
+gConnectLeg <- function(body, landmarks, viz=FALSE){
   #Vectorization assuming left/right inner nesting for landmarks
   if(body %>% is.list){
     pb <- progress::progress_bar$new(total = length(body))
@@ -651,8 +629,8 @@ gConnectLeg <- function(body, landmarks, viz=F){
   }
   if(landmarks %>% is.na %>% all){ return(NA) }
   #Function
-  kne <- landmarks["knee",] #knee landmark
-  ins <- landmarks["insertion",] #dilated insertion landmark
+  kne <- landmarks["knee",] %>% as.numeric #knee landmark
+  ins <- landmarks["insertion",] %>% as.numeric #dilated insertion landmark
   v_dir <- (ins-kne) #direction vector from knee to dilated insertion
   v_u <-  v_dir / (v_dir^2 %>% sum %>% sqrt) #unit direction vector
   new_ins <- ins #new insertion value
@@ -666,7 +644,7 @@ gConnectLeg <- function(body, landmarks, viz=F){
     new_ins_round <- new_ins %>% round #round for search in discrete pixel body
     iterations <- iterations+1
   }
-  new_ins <- new_ins - v_u  #avoid overlap
+  new_ins <- (new_ins - v_u) %>% round #avoid overlap
   #visualization
   if(viz){
     plot(rbind(body, landmarks), as=1, col="grey60", pch=15)

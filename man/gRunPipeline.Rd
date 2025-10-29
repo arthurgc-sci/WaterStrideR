@@ -4,7 +4,7 @@
 \alias{gRunPipeline}
 \title{Main method to run gPipeline for one or multiple images in the same directory}
 \usage{
-gRunPipeline(img_path, return_df = T, ...)
+gRunPipeline(img_path, return_df = TRUE, ...)
 }
 \arguments{
 \item{img_path}{image path or vector of image paths to analyze}

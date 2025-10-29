@@ -4,7 +4,7 @@
 \alias{gConnectLeg}
 \title{Connect leg landmarks with body}
 \usage{
-gConnectLeg(body, landmarks, viz = F)
+gConnectLeg(body, landmarks, viz = FALSE)
 }
 \arguments{
 \item{body}{dataframe or matrix of body points coordinates}

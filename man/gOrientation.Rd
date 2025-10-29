@@ -4,7 +4,7 @@
 \alias{gOrientation}
 \title{Gerris orientation angle}
 \usage{
-gOrientation(body_coords, intersection_coords, diag = F)
+gOrientation(body_coords, intersection_coords, diag = FALSE)
 }
 \arguments{
 \item{body_coords}{list or single dataframe or matrix of body points coordinates}

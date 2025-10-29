@@ -10,7 +10,7 @@ gWritePipeline(
   detection_plot,
   df_out,
   dim_img,
-  single_write = T
+  single_write = TRUE
 )
 }
 \arguments{

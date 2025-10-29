@@ -4,7 +4,7 @@
 \alias{GMMdRoots}
 \title{Roots of the derivative of a GMM}
 \usage{
-GMMdRoots(GMM_df, y, viz = F, msg = T)
+GMMdRoots(GMM_df, y, viz = FALSE, msg = TRUE)
 }
 \arguments{
 \item{GMM_df}{dataframe ($df) output of GMM()}

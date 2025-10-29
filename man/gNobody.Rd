@@ -4,7 +4,7 @@
 \alias{gNobody}
 \title{Remove gerris bodies}
 \usage{
-gNobody(base_img, body_lab_points, viz = F)
+gNobody(base_img, body_lab_points, viz = FALSE)
 }
 \arguments{
 \item{base_img}{c.img. Base image suitable for waterstrider pipeline}

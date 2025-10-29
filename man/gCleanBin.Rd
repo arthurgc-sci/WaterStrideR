@@ -4,7 +4,7 @@
 \alias{gCleanBin}
 \title{Clean individuals binary image}
 \usage{
-gCleanBin(l_img_bin, centroid, as_coords = T, px_filter = 25)
+gCleanBin(l_img_bin, centroid, as_coords = TRUE, px_filter = 25)
 }
 \arguments{
 \item{l_img_bin}{An image as pixset or c.img or a list of images}

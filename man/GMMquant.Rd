@@ -4,7 +4,7 @@
 \alias{GMMquant}
 \title{Quantile off GMM model dataframe gmm_model_df from GMM function}
 \usage{
-GMMquant(gmm_model_df, q, viz = F)
+GMMquant(gmm_model_df, q, viz = FALSE)
 }
 \arguments{
 \item{gmm_model_df}{dataframe ($df) output of GMM()}

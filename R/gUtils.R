@@ -12,7 +12,6 @@
 #' @importFrom stats dnorm lm median pnorm prcomp predict qnorm rnorm sd uniroot
 #' @importFrom utils stack write.table
 #' @importFrom imager %inr%
-#' @import MASS
 #' @importFrom mclust Mclust mclustBIC
 #'
 #' @param img an imager::cimg
@@ -26,15 +25,14 @@ correct_illumination <- function(img, nsamples = 1e4L) {
     img <- imager::grayscale(img)
   }
   # linear regression trend
-  trend <- img %>%
+  samp_img <- img %>%
     as.data.frame() %>%
-    dplyr::sample_n(nsamples) %>%
-    lm(value ~ x * y, data = .) %>%
-    predict(img)
+    dplyr::sample_n(nsamples)
+  lm_img <- lm(value ~ x * y, data = samp_img)
+  trend <- predict(lm_img, img)
   out <- img - trend
   return(out)
 }
-
 
 #' Invert grayscale image
 #'
@@ -67,7 +65,7 @@ eu_dist <- function(v1, v2) {
 #' @param name a string. name and path of the directory to create
 #' @param msg logical. console message option  
 #' @keywords internal
-create_dir <- function(name, msg=T){
+create_dir <- function(name, msg=TRUE){
   if (!dir.exists(name)) {
     dir.create(name)
     if(msg) message("Created directory:", name)
@@ -98,31 +96,6 @@ major_axis_angle <- function(outline) {
   pca <- prcomp(outline)   #PCA to find major axis
   angle <- atan2(pca$rotation[2,1], pca$rotation[1,1])  #calculate rotation angle
   return(angle)
-}
-
-#' Identify sequences of TRUE values in a cyclic boolean vector
-#'
-#' @param boolean_vector a vector of boolean values
-#' @export
-find_true_sequences <- function(boolean_vector) {
-  true_sequences <- list()
-  in_sequence <- FALSE
-  start_idx <- NULL
-  for (i in seq_along(boolean_vector)) {
-    if (boolean_vector[i]) {
-      if (!in_sequence) {  #start of a new sequence
-        start_idx <- i
-        in_sequence <- TRUE
-      }
-      if (i == length(boolean_vector)) {  #end of sequence at the end of the vector
-        true_sequences[[length(true_sequences) + 1]] <- start_idx:i
-      }
-    } else if (in_sequence) { #end of current sequence
-      true_sequences[[length(true_sequences) + 1]] <- start_idx:(i - 1)
-      in_sequence <- FALSE
-    }
-  }
-  return(true_sequences)
 }
 
 #' Norm of vector
@@ -161,13 +134,13 @@ scalar <- function(u, v){
 #' @param search_w numerical integer. Index of the next value to check in the contour 
 #' @export
 contourAngles <- function(coords, search_w = 5){
-  angcont=c()
-  lcont=nrow(coords)
+  angcont <- c()
+  lcont <- nrow(coords)
   for(i in 0:(lcont-1)){
-    u=as.vector(unlist(coords[(i+search_w)%%lcont+1,]-coords[i%%lcont+1,]))
-    v=as.vector(unlist(coords[(i-search_w)%%lcont+1,]-coords[i%%lcont+1,]))
-    var=(-angleV(u,v)+pi)/pi
-    angcont=c(angcont, var)
+    u <- as.vector(unlist(coords[(i+search_w)%%lcont+1,]-coords[i%%lcont+1,]))
+    v <- as.vector(unlist(coords[(i-search_w)%%lcont+1,]-coords[i%%lcont+1,]))
+    var <- (-angleV(u,v)+pi)/pi
+    angcont <- c(angcont, var)
   }
   return(angcont)
 }
@@ -207,7 +180,7 @@ binaryLoad <- function(img_path, threshold){
 #' @param padding numerical integer of padding to add to the crop
 #' @param return_offset logical. to also return offset value of recrop
 #' @export
-coordsAsImg <- function(coords, padding=0, return_offset=F){
+coordsAsImg <- function(coords, padding=0, return_offset=FALSE){
   #safety
   coords <- coords %>% as.matrix #avoid issues related to dataframe format, considered as a type of list
   if(length(coords)==2){  #single points, no point in creating an image
@@ -221,7 +194,7 @@ coordsAsImg <- function(coords, padding=0, return_offset=F){
   fxy_range <- sapply(xy_mid, function(x) x+c(-max_range, max_range)/2) #x and y range of the new image
   img_matrix <- matrix(0, nrow = max_range+1, ncol = max_range+1) #empty matrix as base for new img
   min_range <- apply(fxy_range, 2, function(x) x %>% min %>% round)
-  coord_offset <- matrix(min_range, nrow=nrow(coords), ncol=2, byrow=T)
+  coord_offset <- matrix(min_range, nrow=nrow(coords), ncol=2, byrow=TRUE)
   xy_coords <- coords - coord_offset+1
   img_matrix[xy_coords] <- 1
   img <- imager::as.cimg(img_matrix)
@@ -263,11 +236,11 @@ coordsToLinear <- function(coords, img){
 #' @param kernel_size numerical integer. closing and opening kernel size in pixels
 #' @param as_coords logical. to return
 #' @export
-cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
+cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = TRUE){
   if(!is.list(body_lab_points)){
     body_lab_points <- list(body_lab_points) #convert to list if theres a single element for correct use of lapply
   }
-  body_img <- lapply(body_lab_points, coordsAsImg, return_offset = T, padding = kernel_size) #convert to img
+  body_img <- lapply(body_lab_points, coordsAsImg, return_offset = TRUE, padding = kernel_size) #convert to img
   closed_body_img <- lapply(body_img, function(x) imager::mclosing_square(x$img, size = kernel_size)) #morphological closing
   opened_body_img <- lapply(closed_body_img, imager::mopening_square, size = kernel_size) #morphological opening
   res <- opened_body_img
@@ -275,7 +248,7 @@ cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
     res <- mapply(function(x, y, z){
       coords0 <- imgAsCoords(x) - (kernel_size + 2)
       offset <- z$coord_offset[1,] %>% round + kernel_size+2
-      offset_matrix <- matrix(rep(offset, nrow(coords0)), ncol=2, byrow=T)
+      offset_matrix <- matrix(rep(offset, nrow(coords0)), ncol=2, byrow=TRUE)
       coords <- coords0 + offset_matrix
       return(coords)
     }, opened_body_img, body_lab_points, body_img, SIMPLIFY=FALSE)
@@ -285,14 +258,28 @@ cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = T){
 
 #' Simple contour coords of binary image
 #'
+#' @importFrom imager rm.alpha grayscale is.cimg is.pixset
+#' @importFrom grDevices contourLines
 #' @param img_bin a binary c.img
 #' @export
 simpleCont <- function(img_bin){
   if(is.list(img_bin)){
     return(lapply(img_bin, simpleCont))
   }
-  cont <- imager::contours(img_bin, nlevels=1) #contour of the dilation as the intersection line
-  #note : this is suboptimal as imager::contours uses subpixel level alogrithm which is useless in this case
+  if(!is.pixset(img_bin) && !is.cimg(img_bin)){
+    stop("img_bin is not a pixset or cimg")
+  } else if(dim(img_bin)[4]>1){ #if more than one channel
+    img_bin <- img_bin %>% rm.alpha %>% grayscale(drop=TRUE)
+  }
+  z <- img_bin[,,1,1] %>% as.matrix
+  z <- ifelse(z >= 0.5, 1, 0)
+  dims <- dim(img_bin[,,1,1])
+  cont <- contourLines(x = seq(dims[1]),
+                       y = seq(dims[2]),
+                       z = z,
+                       levels = 1)
+  if(length(cont)==0) stop("No contour found")
+  #note : this is suboptimal as it uses subpixel level alogrithm which is useless in this case
   df <- data.frame("dim1" = round(cont[[1]]$x), "dim2" = round(cont[[1]]$y)) #round
   cont_coords <-  df[!duplicated(df), ] #removes duplicates
   rownames(cont_coords) <- seq_along(cont_coords[,1]) #coherent rownames
@@ -306,7 +293,7 @@ simpleCont <- function(img_bin){
 #' @param coords logical. to return numerical points coordinates
 #' @param index logical. to return point's index
 #' @export
-overlapPoints <- function(set_a, set_b, coords=T, index=T){
+overlapPoints <- function(set_a, set_b, coords=TRUE, index=TRUE){
   set_a <- set_a %>% as.matrix
   set_b <- set_b %>% as.matrix
   ptInPts <- function(pt, crds){
@@ -323,7 +310,7 @@ overlapPoints <- function(set_a, set_b, coords=T, index=T){
     set_b <- matrix(set_b, ncol = 2, byrow = TRUE)
   }
   interID <- apply(set_b, 1, ptInPts, crds=set_a) %>% unlist
-  inter <- 1:nrow(set_a) %in% interID
+  inter <- seq_len(nrow(set_a)) %in% interID
   if(index && coords){
     return(list("coords"=set_a[inter,], "index"=inter))
   } else if(coords){
@@ -418,11 +405,11 @@ spikePlateau <- function(v, increment = 1e-5){
   same <- v == v[(1:len) %% len+1]
   boolseq <- boolSeqLim(same)
   addval <- rep(0, len)
-  for(i in 1:length(boolseq$first)){
+  for(i in seq_along(boolseq$first)){
     first <- boolseq$first[i]
     ran <- boolseq$last[i] - first+1
     if(ran != 1){
-      pyramid <- c(1:ceiling((ran+1)/2), (floor((ran+1)/2):1)[-1]) #test it for yourself with any int 'ran'
+      pyramid <- c(1:ceiling((ran+1)/2), (floor((ran+1)/2):1)[-1]) 
       add_i <- pyramid * increment
     } else {
       add_i <- increment #single increment for single value
@@ -449,4 +436,53 @@ make_disc_kernel <- function(size) {
     nrow = size, ncol = size
   ))
   return(kernel)
+}
+
+#' Accessory logical for boolSeqLim
+#' 
+#' @param x0 logical vector
+#' @param x1 logical vector
+#' @keywords internal
+bool_first <- function(x0,x1){
+  if(x0==0 & x1==1){TRUE} else {FALSE}
+}
+
+#' Accessory logical for boolSeqLim
+#'
+#' @param x0 logical vector
+#' @param x1 logical vector
+#' @keywords internal
+bool_last <- function(x0,x1){
+  if(x0==1 & x1==0){TRUE} else {FALSE}
+}
+
+#' Interval of all True/1 sequence in boolean vector
+#'
+#' Give matching index of first and last True values of sequences of True in v
+#' 
+#' @param v a vector of logical values
+#' @param circular a logical for prior assumption of circularity of v 
+#' 
+#' @export
+boolSeqLim <- function(v, circular = TRUE){ #circular :
+  l_v <- length(v)
+  if(sum(v)==0) return(list(first=NULL, last=NULL))
+  if(l_v<=1){
+    if(v[1]==1) return(list(first=1, last=1))
+  }
+  if(any(v!=0 & v!=1)) stop("v must be a boolean or binary vector")
+  if(circular){
+    v0 <- c(v[l_v],v) # v
+    v1 <- c(v,v[1]) # v+1
+  } else {
+    stop("Non-circular boolSeqLim not implemented yet")
+  }
+  first <- mapply(bool_first, v0, v1)[-(l_v+1)] #which 0 are followed by 1
+  last <- mapply(bool_last, v0, v1)[-1] #which 1 are followed by 0
+  i_first <- which(first) #as index
+  i_last <- which(last)
+  if(i_last[1] < i_first[1]){ #match both lists
+    i_last <- c(i_last[-1], i_last[1]) #first id in last position
+  }
+  return(list("first" = i_first, "last" = i_last))
 }

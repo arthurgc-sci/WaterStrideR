@@ -4,7 +4,7 @@
 \alias{coordsAsImg}
 \title{Convert xy coordinates dataset as square c.img with padding}
 \usage{
-coordsAsImg(coords, padding = 0, return_offset = F)
+coordsAsImg(coords, padding = 0, return_offset = FALSE)
 }
 \arguments{
 \item{coords}{matrix or dataframe of numerical coordinates}
