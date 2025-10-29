@@ -163,7 +163,7 @@ normBody <- function(img_bin, ori_angle){
   if(!is.numeric(ori_angle)) stop("ori_angle should be a number o list of numbers")
   #FX
   body_cont <- img_bin %>% simpleCont #cleaned body contour
-  body_cont_mat <- body_cont[c(seq_along(body_cont), 1), ] # Close contour
+  body_cont_mat <- body_cont[c(seq_len(nrow(body_cont)), 1), ] # Close contour
   body_cont_mat <- body_cont_mat %>% as.matrix # As matrix, format for Momocs
   cos_a <- cos(ori_angle) # Rotation matrix using detected orientation
   sin_a <- sin(ori_angle)
