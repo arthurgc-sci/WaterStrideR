@@ -2,19 +2,19 @@
 % Please edit documentation in R/gModels.R
 \name{scoresEFA}
 \alias{scoresEFA}
-\title{PCA scores of EFA of oriented contours from binary image}
+\title{Momocs EFA from waterstrider body image}
 \usage{
-scoresEFA(img_bin, ori_angle = rep(0, length(img_bin)), nb_h = 7, viz = FALSE)
+scoresEFA(ori_cont, nb_h = 7, viz = FALSE, resamp = 100)
 }
 \arguments{
-\item{img_bin}{a list of binary image or pixset with a single white object}
+\item{ori_cont}{contour or list of contours (as 2D numeric dataframe of matrix) of waterstrider body image(s)}
 
-\item{ori_angle}{a list of orientation angles of provided shapes}
+\item{nb_h}{number of harmonics to compute}
 
-\item{nb_h}{a numerical integer. number of elliptuc fourier harmonics to compute}
+\item{viz}{logical for plot of alignment, fourier space and PCA}
 
-\item{viz}{visualization option, additionally returns 3 plots}
+\item{resamp}{number of points to resample on each contour}
 }
 \description{
-PCA scores of EFA of oriented contours from binary image
+Momocs EFA from waterstrider body image
 }
