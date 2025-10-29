@@ -1,6 +1,6 @@
 Package: WaterStrideR
 Title: Leg Measurement, Sex and Wing Prediction for Microvelia longipes
-Version: 0.4.1
+Version: 0.4.2
 Authors@R: 
     person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre"))
 Description: Image analysis, statistical, logical tools and pipeline for leg measurement, sex and wing prediction of Microvelia longipes (Hemiptera, Gerroidea, Veliidae) from images including multiple individuals. Scaling is automatized if the image include a millimetric orange-red ruler.
