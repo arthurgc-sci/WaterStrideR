@@ -1,0 +1,320 @@
+---
+title: "Interpreting WaterStrideR Outputs"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Interpreting WaterStrideR Outputs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(WaterStrideR)
+```
+
+## Introduction
+
+WaterStrideR produces three types of outputs to help you extract measurements and validate results:
+
+1. **R data frame** - Measurement data returned directly in R
+2. **Folder outputs** - CSV file and graphical quality control plots
+3. **Advanced outputs** - Intermediate processing data for in depth analysis
+
+This vignette explains how to interpret each output type and use them for quality control.
+
+## Prerequisites
+
+This vignette assumes you have:
+
+- Followed the acquisition protocol: `vignette("getting-started")`
+- Tuned parameters for your dataset: `vignette("parameter-tuning")`
+
+## 1. R Data Frame Output
+
+### Basic Usage
+
+Set `return_df = TRUE` to return measurement data directly in R:
+
+```{r eval=FALSE}
+results <- gRunPipeline( #Run pipeline
+  "path/to/images",
+  return_df = TRUE
+)
+df <- results$df #Extract the dataframe
+```
+
+### Demo with Example Data
+
+```{r eval=FALSE}
+# Run on package example data. It might take a few seconds.
+example_img <- system.file("extdata", "small_test.jpg", package = "WaterStrideR")
+results <- gRunPipeline(
+  example_img,
+  return_df = TRUE, #return data frame
+  write_output = FALSE, #no files written
+  predict_sex_wing = TRUE,
+  #Parameters for this image:
+  k.body_dilation_ratio = 0.2,
+  k.bin_thresh = 0.6
+)
+df <- results$df
+df #Explore the data frame
+```
+
+### 1A. Body Size and Leg Segmentation Columns
+
+When running with default settings, the data frame contains:
+
+```{r eval=FALSE}
+# Column structure (example output)
+df
+#>       image i L_body error_margin left_tibia right_tibia left_femur right_femur 
+#>1 small_test 1   1950     89.27096        756         726        947         885   
+#>2 small_test 2   2376    108.80771       1708          NA       1742          NA   
+#>3 small_test 3   2065     94.55820       1455          NA       1363          NA   
+```
+
+**Column descriptions:**
+
+- `img` - Source image name
+- `i` - Individual identifier within the image
+- `L_body` - Body length (using elongation axis)
+- `error_margin` - If `auto_scale = TRUE`: error margin on body length linked to scale computation
+- `left_tibia`, `right_tibia` - Hind leg tibia measurements
+- `left_femur`, `right_femur` - Hind leg re-attached femur measurements
+
+**Important notes:**
+
+- **Individual IDs are image-specific:** Each `i` restarts at 1 for each new image
+- **Unique identification:** Use the combination `img + i` to uniquely identify individuals
+- **NA values:** Indicate failed measurements (failed safety check in segmentation or landmarking)
+
+### 1B. Sex and Wing Prediction Columns
+
+When `predict_sex_wing = TRUE`, additional columns appear:
+
+```{r eval=FALSE}
+# Additional columns for M. longipes classification
+results
+#>       image i ... sex       F_prob       M_prob wing  winged_prob notwinged_prob
+#>1 small_test 1 ... F 1.000000e+00 2.147902e-16    0 7.912372e-13   1.000000e+00
+#>2 small_test 2 ... M 8.772976e-12 1.000000e+00    1 1.000000e+00   5.524574e-10
+#>3 small_test 3 ... M 1.713403e-13 1.000000e+00    0 8.211109e-08   9.999999e-01
+```
+
+**Column descriptions:**
+
+- `sex` - Predicted sex (F/M)
+- `F_prob`, `M_prob` - Confidence for each class of sex
+- `wing` - Predicted wing status (1 = winged / 0 = wingless)
+- `winged_prob`, `wingless_prob` - Confidence for each class of wing status
+
+**⚠️ Important:** These predictions are reliable only for *M. longipes* images following the strict acquisition protocol. Low confidence values (<0.90) warrant manual verification.
+
+**Note:** If you want sex and wing status prediction, running the entire pipeline is required regardless of your interest in leg measurement.
+
+## 2. Folder Outputs
+
+### Basic Usage
+
+Set `write_output = TRUE` to generate files:
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  write_output = TRUE,
+  return_df = TRUE
+)
+```
+
+**Output structure:**
+
+For a single image:
+```{r eval=FALSE}
+gRunPipeline("path/to/image_directory/image1.png")
+```
+```
+image_directory/
+├──image1.png                 # Your image
+├── out_image1/
+│   ├──data_image1.csv        # Result data frame saved as CSV
+│   ├──detection_image1.png   # Detection plot
+│   └──individuals_image1/    
+│      ├──image1_1.png        # Individual 1 detailed plot
+│      ├──image1_2.png
+│      ├──    ...
+│      └──image1_n.png
+```
+For a batch:
+```{r eval=FALSE}
+gRunPipeline("path/to/directory/image_folder") #with 2 images
+```
+
+```
+directory/
+├──image_folder/
+│   ├──image1.png                  # Your first image
+│   ├──image2.png
+│   └──out_image_folder/
+│      ├──data_image_folder.csv    # Result data frame saved as CSV
+│      └──detection/
+│         ├──detection_image1.png  # Detection plot of the first image
+│         └──detection_image2.png
+│      └──individuals_image1/      # Individual 1 of image1 detailed plot
+│         ├──image1_1.png        
+│         ├──    ...
+│         └──image1_n1.png
+│      └──individuals_image2/
+│         ├──image2_1.png        
+│         ├──    ...
+│         └──image2_n2.png
+```
+**Note:** Output folders are created at the same directory level as your input path.
+
+### 2A. CSV Data File
+
+**File:** `out_yourimg/data_yourimg.csv`
+
+**Purpose**:
+- Export results for external analysis (Excel, GraphPad, etc.)
+- Archive measurements with timestamp
+- Connect measurements to corresponding plots
+
+**Usage**:
+```{r eval=FALSE}
+# Read back into R
+df <- read.csv("out_image1/measurements.csv")
+
+#Remove lines with missing leg measurements for both legs
+#Keep only one tibia and one femur column (using average if both are present)
+df_clean <- gOneLeg(df)
+```
+
+**Quality checks:**
+- Look for NA values (failed segmentation or landmarking)
+- Check for outliers (aberrant measurements)
+- Compare scale factors across images if you are using `auto_scale = TRUE`
+
+### 2B. Detection Plot
+
+**File:** `out_yourimg/detection_yourimg.jpg` (single image) or `out/detection/detection_yourimg.jpg` (batch)
+
+```{r echo=FALSE, out.width="100%", fig.align='center'}
+# Include example detection plot
+knitr::include_graphics("out_detection.png")
+```
+
+**Visual elements:**
+
+- Small white crosses: individual's centroid
+- Light blue numbers: Individual IDs (matching data frame `i` column)
+- Bottom left in dark orange: Scale
+
+**Purpose:**
+
+- **Identify false positives:** Cross and numeric id on random objects
+- **Identify false negatives:** Individuals without cross or numeric id
+- **Validate scaling:** Check ruler detection and scale bar
+- **Detect spatial biases:** Are certain image regions problematic?
+- **Troubleshooting:** Can be used for scale detection and individual detection parameters tuning.
+See related vignette:
+```{r eval=FALSE}
+vignette("parameter-tuning", package = "WaterStrideR")
+```
+
+### 2C. Individual Plots
+
+**Files:** `out_yourimg/individuals_yourimg/yourimg_i.jpg`
+
+```{r echo=FALSE, eval=FALSE}
+# Include example individual plot
+knitr::include_graphics("out_ind.png")
+```
+
+**Visual elements:**
+
+- **Light gray region:** Segmented complete individual
+- **Dark gray region:** Segmented body
+- **Black region:** Segmented hind legs
+- **Pink arrow:** Body orientation from body centroid (anterior direction)
+- **Light orange lines:** Femur measurements with length values
+- **Light orange point:** Knee landmark
+- **Dark orange lines:** Tibia measurements with length values
+- **Dark orange point:** Ankle landmark
+- **Purple dotted outline:** Dilated body contour (used for orientation and leg detection)
+
+**Purpose:**
+
+- **Validate segmentation quality:** Are body and legs properly separated?
+- **Check orientation accuracy:** Does pink arrow point anterior?
+- **Verify measurements:** Do segment lengths match visual appearance?
+- **Link to data frame:** Use image name and `i` identifier to match rows
+- **Quality control:** Identify individuals requiring manual correction or removal
+- **Troubleshooting:** Can be used for leg detection and landmarking parameters tuning.
+See related vignette:
+```{r eval=FALSE}
+vignette("parameter-tuning", package = "WaterStrideR")
+```
+
+**Workflow tip:**
+
+1. Check detection plot for overall quality
+2. Examine data frame for NA values or outliers
+3. Open corresponding individual plots for visual inspection
+4. Document problematic images for parameter adjustment
+5. Remove problematic individuals using their identifier if needed
+
+## 3. Advanced Outputs
+
+### Usage
+
+Set `return_everything = TRUE` to access intermediate processing data:
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  return_df = TRUE,
+  return_everything = TRUE
+)
+more_data <- results$process_data #extract intermediate processing data
+
+# Results now contains nested lists with processing data
+names(results)
+```
+
+### Available Data
+
+**Intermediate outputs include (but not limited to):**
+
+-`body_img`: Segmented and cropped body image
+-`angle`: Orientation angle (rad)
+-`legs`: Hind legs points
+-`dilcont`: Dilated contour
+-`inter_idx`: Indices in `dilcont` of intersections of `dilcont` with the full segmented individual
+-`body_centroids`: Body centroid coordinates
+-`scale`: Scale and error margin if `auto_scale = TRUE`
+
+### Use Cases
+
+These outputs were not designed with a specific purpose in mind. We chose to include them for multiple reasons:
+
+- **Extraction of data** not deemed relevant enough for inclusion in the main result data frame 
+(scale value, orientation, body centroid...)
+- **Custom analysis** and method development or refinement
+- **Debugging** through mid-step checks to avoid manually rebuilding the whole pipeline
+- **Parameter tuning**. Many functions used in the pipeline have their own visualization option 
+for in depth diagnostics with `viz = TRUE` (e.g. in `gLegLandmarks()`). Mid step results can be used
+to run these functions as standalone to access their visuals and to improve efficiency. See more in:
+```{r eval=FALSE}
+vignette("parameter-tuning", package = "WaterStrideR")
+```
+
+
+
+

@@ -169,6 +169,7 @@ gBodyPredict <- function(img_data, angle, what){
 #' @param rs an integer. 
 #' @param pca a prcomp object.
 #' @param lda a MASS lda object.
+#' @import MASS
 #' @export
 gBodyPredict1 <- function(img, ang, rs, pca, lda){
   #safety

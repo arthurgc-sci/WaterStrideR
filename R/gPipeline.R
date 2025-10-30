@@ -59,14 +59,14 @@ gPipeline <- function(# INPUT
                       return_everything=FALSE,
                       # In-pipeline parameters
                       # a. Key variables
-                      k.bin_thresh = 0.8,
+                      k.bin_thresh = 0.8, #body
+                      k.body_size_px_range = c(300,1500),
                       k.clean_kernel = 3,
                       k.crop_size_factor = 3.5,
                       k.gmm_slope_value = -25,
                       k.body_dilation_ratio = 0.3,
                       k.leglm_search_w = 6,
                       k.leglm_splines_df = 30,
-                      k.body_size_px_range = c(300,1500),
                       # b. Filters
                       f.red_thresh = 0.05,
                       f.clean_small_spots = 25,
@@ -191,7 +191,7 @@ gPipeline <- function(# INPUT
       M_prob = sex_prediction$posterior[,"M"],
       wing = (wing_prediction$class %>% as.numeric)-1, #scale 2-1 (model levels) to 1-0
       winged_prob = wing_prediction$posterior[,"2"],
-      notwinged_prob = wing_prediction$posterior[,"1"]
+      wingless_prob = wing_prediction$posterior[,"1"]
     )
    df_out <- cbind(df_out, df_sw)
  }
@@ -219,7 +219,10 @@ gPipeline <- function(# INPUT
     output[["df"]] <- df_out
   }
   if(return_everything){ #return mid-pipeline data (for model training or diagnostics for example)
-    output[["process_data"]] <- list(body_img = body_l_crops, angle = ang)
+    output[["process_data"]] <- list(body_img = body_l_crops, angle = ang, legs = legs,
+                                     dilcont = dilcont, inter_idx = inter_idx,
+                                     body_centroids = body_centroids, scale = scale, full = full,
+                                     inser = inser)
   }
   return(output)
 }

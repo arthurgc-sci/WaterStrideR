@@ -22,8 +22,8 @@ test_that("PCA and atan2 angle conversion",{
 
 #normV, scalar, angleV
 test_that("basic angle operations work",{
-  v1=c(4,3)
-  v2=c(1,2)
+  v1 <- c(4,3)
+  v2 <- c(1,2)
   expect_equal(normV(v1),5)
   expect_equal(scalar(v1,v2),10)
   expect_equal(angleV(v1,v2),0.463647609)

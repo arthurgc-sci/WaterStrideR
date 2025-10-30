@@ -1,0 +1,291 @@
+---
+title: "Getting Started with WaterStrideR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with WaterStrideR}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+WaterStrideR provides automated morphological measurements for water
+striders and similar arthropods. The package can fulfill three main
+purposes, depending on your data type and research needs:
+
+1.  **Leg segmentation and body measurements** - Extract hind leg
+    measurements, body dimensions, and individual positions
+2.  **Sex and wing prediction** - Classify sex and wing presence in
+    *Microvelia longipes* (trained models)
+3.  **Automatic scaling** - Convert pixel measurements to real-world
+    units using red graph paper
+
+**Important:** All features depend on standardized image acquisition.
+This package is best suited for high-throughput phenotyping where you
+can maintain consistent imaging protocols across many individuals.
+
+## Is WaterStrideR Right for Your Study?
+
+WaterStrideR is designed for arthropods where:
+
+-   2D top-view images are sufficient for leg measurements
+-   You have (or can establish) a standardized imaging setup
+-   You need to process many individuals (batch processing)
+-   Target organisms are from Gerroidea or have similar body plans
+
+## Installation
+
+```{r eval=FALSE}
+#Install 'remotes' package required to for installation from GitHub 
+install.packages("remotes")
+
+#Install the package
+remotes::install_github("arthurgc-sci/WaterStrideR")
+
+# Load the package
+library(WaterStrideR)
+```
+
+## Input Data Requirements
+
+### 1A. Hind Leg Segmentation and Body Measurements
+
+**Use case:** Extract morphological measurements from water striders or
+similar arthropods.
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  auto_scale = FALSE,
+  predict_sex_wing = FALSE
+)
+```
+Wait until all the steps below are completed:
+```{r eval=FALSE}
+#1 - Loading and segmenting image
+#| 
+#2 - Computing scale
+#|                                                                                                                                          
+#3 - Computing body
+#| 
+#4 - Individual thresholding
+#|                                                                                                                                          
+#5 - Orienting individuals
+#| 
+#6 - Leg segmentation
+#| 
+#7 - Leg landmarking & measurement
+#|                                                                                                                                          
+#8 - Sex and wing prediction #OPTIONAL
+#>
+```
+
+**Requirements:**
+
+-   Top-view images with visible legs
+-   Contrast between individuals and a lighter background
+-   Legs at least 2 pixels thick
+-   Most individuals not overlapping with each other
+
+**Outputs:**
+
+-   Individual detection and position
+-   Body length measurement
+-   Femur and tibia length measurements of hind legs
+
+### 1B. Sex and Wing Detection for *Microvelia longipes*
+
+**Use case:** Predict sex and wing presence using pre-trained
+classification models.
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  predict_sex_wing = TRUE
+)
+```
+
+**⚠️ Important:** Models were trained on *M. longipes* images acquired
+following the strict protocol below (Section 2.2). Predictions on images
+from different protocols or species may be unreliable. Use with caution
+and validate results.
+
+### 1C. Automatic Scaling
+
+**Use case:** Convert pixel measurements to millimeters automatically.
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  auto_scale = TRUE
+)
+```
+
+**Requirements:** 
+
+- Include red or orange millimetric graph paper in each image
+- Graph paper must be at the same height as specimens
+- Small squares (1mm) should be distinguishable
+- 2cm² of graph paper is sufficient (larger areas reduce performance)
+
+**Tuning:** If ruler detection fails, adjust `f.red_thresh` in `gRunPipeline`.
+
+## Data Acquisition Protocols
+
+### 2.1 General Setup for Arthropods
+
+**Minimum requirements:**
+
+-   **Lighting:** Homogeneous, diffuse lighting (avoid shadows and
+    glare)
+-   **Camera angle:** Directly overhead (perpendicular to specimen
+    plane)
+-   **Background:** White or light-colored, uniform background
+-   **Resolution:** Legs should be at least 2 pixels thick
+-   **Positioning:** Specimens flat, legs extended when possible
+
+### 2.2 Strict Protocol (*M. longipes* and Optimal Performance)
+
+WaterStrideR was specifically tuned and validated using the following
+protocol:
+
+**Image specifications:**
+
+- Resolution: 1900-3500 pixels per dimension
+- File size: 500-900 KB
+- DPI: 300
+- Color depth: 24-bit
+
+**Camera settings (Nikon D7200):**
+
+- ISO: 800 - Aperture: f/6.3
+- Shutter speed: 1/160 sec
+- Exposure compensation: 0
+- Flash: Off
+
+**Physical setup:**
+
+- Photography rack: \~12 × 16 cm
+- Lighting: Diffuse
+neon white light
+- Background: White paper
+
+```{r echo=FALSE, out.width="100%", fig.align='center'}
+knitr::include_graphics("big_example.jpg")
+```
+
+**Note:** While this strict protocol ensures optimal performance,
+WaterStrideR can work with other setups after proper parameter tuning.
+
+See the **Parameter Tuning vignette** for detailed instructions:
+
+```{r eval=FALSE}
+vignette("parameter-tuning", package = "WaterStrideR")
+```
+
+### 2.3 Protocol for Automatic Scaling
+
+To enable automatic scale detection:
+
+1.  **Add graph paper:** Place a small piece of red or orange
+    millimetric graph paper in the frame
+2.  **Size:** 2cm² is sufficient and recommended (larger areas slow
+    processing)
+3.  **Position:** Ensure graph paper is at the same focal plane as
+    specimens
+4.  **Visibility:** 1mm grid squares must be distinguishable
+5.  **Color:** Red or orange paper works best (high red channel value)
+
+**Enable in pipeline:**
+
+```{r eval=FALSE}
+results <- gRunPipeline(
+  "path/to/images",
+  auto_scale = TRUE,
+  f.red_thresh = 0.5  # Adjust if ruler detection fails
+)
+```
+
+## Workflow Overview
+
+### Step 1: Acquire Images Following Protocol
+
+Follow the appropriate protocol from Section 2 above based on your
+needs.
+
+### Step 2: Tune Pipeline Parameters
+
+**⚠️ Critical Step:** Parameter tuning is required for \~90% of use
+cases.
+
+Before processing your full dataset, calibrate WaterStrideR for your
+specific:
+
+- Organism morphology
+- Image type
+
+See the **Parameter Tuning vignette** for detailed instructions:
+
+```{r eval=FALSE}
+vignette("parameter-tuning", package = "WaterStrideR")
+```
+
+### Step 3: Run Pipeline
+
+Process a single image or batch of images:
+
+```{r eval=FALSE}
+# Single image
+results <- gRunPipeline(
+  "path/to/image.jpg",
+  write_output = TRUE,
+  return_df = TRUE
+)
+
+# Batch processing (folder of images)
+results <- gRunPipeline(
+  "path/to/folder/",
+  write_output = TRUE,
+  return_df = TRUE
+)
+```
+
+**Parameters:**
+
+- `write_output = TRUE`: Saves graphical outputs for
+quality control
+- `return_df = TRUE`: Returns a data frame with
+measurements
+
+### Step 4: Validate Results
+
+WaterStrideR creates graphical outputs linked to the measurement data
+frame, allowing easy quality checks.
+
+See the **Interpreting Outputs vignette** for details:
+
+```{r eval=FALSE}
+vignette("interpreting-outputs", package = "WaterStrideR")
+```
+
+## Getting Help
+
+-   **Bug reports:** [GitHub
+    Issues](https://github.com/arthurgc-sci/WaterStrideR/issues)
+-   **Questions:** Open a discussion on GitHub
+-   **Citation:** See `citation("WaterStrideR")` once JOSS paper is
+    published
+
+## References
+
+For methodology details, see the JOSS paper: [link once published]

@@ -13,13 +13,13 @@ gPipeline(
   predict_sex_wing = TRUE,
   return_everything = FALSE,
   k.bin_thresh = 0.8,
+  k.body_size_px_range = c(300, 1500),
   k.clean_kernel = 3,
   k.crop_size_factor = 3.5,
   k.gmm_slope_value = -25,
   k.body_dilation_ratio = 0.3,
   k.leglm_search_w = 6,
   k.leglm_splines_df = 30,
-  k.body_size_px_range = c(300, 1500),
   f.red_thresh = 0.05,
   f.clean_small_spots = 25,
   f.leg_lim_ratio = c(0.25, 0.6),
@@ -48,6 +48,8 @@ gPipeline(
 \item{k.bin_thresh}{numerical in \code{[0, 1]}. Global gray-value threshold
 for the initial binarization of the input image}
 
+\item{k.body_size_px_range}{numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand}
+
 \item{k.clean_kernel}{numerical. Kernel size for morphological opening and closing
 of body points to get a cleaner shape.}
 
@@ -63,8 +65,6 @@ of dilated body.}
 \item{k.leglm_search_w}{numerical. Distance (in number of points in contour) to use to compute leg contour angles}
 
 \item{k.leglm_splines_df}{numerical. Number of splines to fit leg contour angle variation}
-
-\item{k.body_size_px_range}{numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand}
 
 \item{f.red_thresh}{numerical in \code{[0, 1]}. Difference in intensity between red component
 and other components to detect the red ruler. Only relevant if auto_scale == TRUE}
