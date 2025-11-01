@@ -181,7 +181,7 @@ neon white light
 - Background: White paper
 
 ```{r echo=FALSE, out.width="100%", fig.align='center'}
-knitr::include_graphics("big_example.jpg")
+knitr::include_graphics("ex_img/big_example.jpg")
 ```
 
 **Note:** While this strict protocol ensures optimal performance,

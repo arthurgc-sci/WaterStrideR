@@ -294,7 +294,7 @@ leg_lmk <- gLegLandmarks(
 ```
 ```{r echo=FALSE, out.width="100%", fig.align='center'}
 # Include example detection plot
-knitr::include_graphics("contpeaks.png")
+knitr::include_graphics("ex_img/contpeaks.png")
 ``` 
 
 ### 1. Angle Search Window (`k.leglm_search_w`)
@@ -368,7 +368,7 @@ results2 <- gRunPipeline(
 ```
 ```{r echo=FALSE, out.width="50%", fig.align='center'}
 # Include example detection plot
-knitr::include_graphics("out_ind_hd.png")
+knitr::include_graphics("ex_img/out_ind_hd.png")
 ``` 
 
 

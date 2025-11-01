@@ -207,7 +207,7 @@ df_clean <- gOneLeg(df)
 
 ```{r echo=FALSE, out.width="100%", fig.align='center'}
 # Include example detection plot
-knitr::include_graphics("out_detection.png")
+knitr::include_graphics("ex_img/out_detection.png")
 ```
 
 **Visual elements:**
@@ -234,7 +234,7 @@ vignette("parameter-tuning", package = "WaterStrideR")
 
 ```{r echo=FALSE, eval=FALSE}
 # Include example individual plot
-knitr::include_graphics("out_ind.png")
+knitr::include_graphics("ex_img/out_ind.png")
 ```
 
 **Visual elements:**
