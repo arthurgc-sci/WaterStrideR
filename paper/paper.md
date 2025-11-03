@@ -11,7 +11,7 @@ tags:
   - ecology
   - evolutionary-biology
   - gaussian-mixture-model
-  - automated-measurment
+  - automated-measurement
 
 authors:
   - name: Arthur Gairin-Calvo
@@ -28,16 +28,16 @@ bibliography: paper.bib
 
 # Summary
 
-Recent advances in omics data acquisition allows for unprencented characterisation of individual organisms at the molecular scale [@Dai:2022], which is vital to help understand phenotype in ecological and evolutionary studies. In this context, there is an ever growing need for high-throughput phenotyping tools [@Houle:2010] to create matching datasets. Deep Learning methods can prove to be limited in absence of extensive morphological training datasets available, while imposing limits on transparency and tunability [@Walsh:2019]. 
-
+Recent advances in omics data acquisition allow for unprecedented characterization of individual organisms at the molecular scale [@Dai:2022], which is vital to help understanding phenotype in ecological and evolutionary studies. In this context, there is a growing need for high-throughput phenotyping tools [@Houle:2010] to create matching datasets. Deep Learning methods can prove to be limited in absence of extensive morphological training datasets available, while imposing limits on transparency and tunability [@OMahony:2019]. `WaterStrideR` addresses these challenges through a transparent, tunable pipeline combining traditional computer vision with statistical modeling.
+ 
 # Statement of need
 
-`WaterStrideR` is an R package for automated hind leg segmentation, measurement and feature classification in Gerroidea-like arthropods from batches of 2D images. It was developped in response to specific needs from our lab for the specie *Microvelia longipes* (rephrase????HELP). This package aim to lift the restriction imposed by manual data acquisition on the amount arthropod individuals to be included the experiment protocol due to time limitations. Although Multiple tools for arthropod detection and segmentation are already available but they are either:
-- Are only suited for specific species out of scope for our needs (FlyLimbTracker[@CITATION], FLLIT[@CITATION])
-- Proven to be unstable on our data due to relatively low resolution per individual (MAPHIS[@CITATION])
-- Not designed for part-level segmentation (FlatBug[@CITATION])
+`WaterStrideR` is an R package for automated hind leg segmentation, measurement and feature classification in Gerroidea-like arthropods from batches of 2D images. It was developed in response to specific needs from our lab for the species *Microvelia longipes* (rephrase????HELP). This package aims to lift the restriction imposed by manual data acquisition on the number of arthropod individuals to be included in experiment protocols due to time limitations. Although Multiple tools for arthropod detection and segmentation are already available, but they are either:
+- Only suited for specific species out of scope for our needs (FlyLimbTracker, [@Uhlmann:2017])
+- Proven to be unstable on our data due to relatively low resolution per individual (MAPHIS, [@Mraz:2024])
+- Not designed for part-level segmentation (FlatBug, [@Svenning:2025])
 
-`WaterStrideR` was developed as an R package to facilitate use by the eco-evolutionary biologist community and fit conveniently in typical analysis workflows. Its use is mainly intended in future publications from research teams aready working with water striders phenotypic data as it extracts features relevant to these species ecology [@Toubiana:2021].
+`WaterStrideR` was developed as an R package to facilitate use by the eco-evolutionary biologist community and fit conveniently in typical analysis workflows. Its use is mainly intended in future publications from research teams already working with water striders phenotypic data as it extracts features relevant to these species' ecology [@Toubiana:2021].
 
 # Concept and implementation
 WaterStrideR implements a hierarchical segmentation pipeline combining traditional computer vision with statistical modeling. 
@@ -49,48 +49,45 @@ WaterStrideR implements a hierarchical segmentation pipeline combining tradition
 
 ## Pipeline overview
 
-- Auto-scaling: automatic conversion from pixels to micrometers using a red graph-paper reference.
-- Body segmentation: user-defined binary threshold and morphological cleaning (imager[@CITATION]).
-- Limb segmentation: Gaussian mixture modeling (mclust[@CITATION]) to separate limbs from background noise \autoref{fig:GMM}.
+- Automatic scaling: automatic conversion from pixels to micrometers using a red graph-paper reference.
+- Body segmentation: user-defined binary threshold and morphological cleaning (imager, [@imager]).
+- Limb segmentation: Gaussian mixture modeling (mclust, [@mclust]) to separate limbs from background noise.\autoref{fig:GMM}.
 - Orientation: body elongation and relative limb position estimated via PCA.
 - Joint landmark detection: based on local orientation and angular variation along the limb contour.
-- Model training: LDA classification of sex and wing features from contour-based descriptors (Momocs[@CITATION]).
+- Model training: LDA classification of sex and wing features from contour-based descriptors (Momocs, [@Momocs]).
 
-![Fig 1. GMM .\label{fig:GMM}](figGMM_final.png){ width="75%" }
+![Two-component Gaussian Mixture Model fitted to pixel intensity values of an image containing one individual. A: Noise component (1). B: Binary threshold that removes most of the noise component (1) while retaining most of the full individual component (2). C: Manually defined binary threshold sufficient to retain the body.\label{fig:GMM}](figGMM_final.png){ width="75%" }
 
 ## Workflow
 
-1. Define a fixed image acquisition protocol. The setup used to create data for this package is detailed in [@HOWTOCITETHEVIGNETTE???]
-2. Adjusting pipeline parameters is required for each new setup. Tuning protocol is detailed in [@HOWTOCITETHEVIGNETTE???]
+1. Define a fixed image acquisition protocol. The setup used to create data for this package is detailed in "getting-started" vignette.
+2. Parameter adjustment is required for each new setup. Tuning protocol is detailed in the "parameter-tuning" vignette.
 3. `WaterStrideR` can now be run on batches of images by inputing tuned parameters and an image folder path to the `gRunPipeline()` function.
 4. Evaluation, overview and filtering are facilitated by clear graphical outputs created in parent directory of input image folder \autoref{fig:outs }.
 
-![Fig 2. Outputs .\label{fig:outs}](outs_v1.png){ width="100%" }
+![Outputs of the full analysis pipeline. A: Detection plot. B: Individual plot. C: CSV data file.\label{fig:outs}](outs_v2.png){ width="100%" }
 
 
-# Validation
+# Performance
+`WaterStrideR` enables processing of hundreds of individuals in minutes compared to hours of manual measurement, while maintaining high accuracy (r = 0.982 for femur length). Performance was tested on 6 images containing a total of 269 individuals, produced following the protocol described in the "getting-started" vignette.
 
+**Detection**: Out of 269 manually counted individuals, 262 (97.40%) were detected using `WaterStrideR` default parameters. All undetected individuals were heavily affected by motion blur. No noise was falsely detected as an individual.
 
+**Leg landmarking**: 78.24% of these individuals had at least one hind leg measured.
 
+**Leg measurement**: Femur length was measured manually in 205 individuals, yielding a Pearson correlation coefficient of 0.982 (p < 2.2 × 10⁻¹⁶, 95% CI = [0.9701, 0.9892]) with `WaterStrideR` output.
+
+**Feature prediction**: Feature prediction for sex and wing presence was tested using leave-30%-out cross-validation with 1000 samples on individuals for which these features could be determined. 
+- Sex: 98.80% prediction accuracy (95% CI = [0.9877, 0.9883]) on 249 individuals.
+- Wing: 99.56% prediction accuracy (95% CI = [0.9957, 0.9961]) on 249 individuals.
+
+## Limitations
+- Inability to compute overlapping legs might lead to bias against male individuals, which have longer legs.
+- The specifics of our leg landmarking implementation makes it unsuitable for species with less than 3 distinguishable hind leg segments.
+- Feature prediction was trained only on our specific data acquisition protocol and might thus not be generalizable for any *Microvelia longipes* image. 
 
 # Acknowledgements
 
+We acknowledge Claudia Pruvôt for providing water strider image data and assistance with trait identification. We also thank Abderrahman Khila and Nicolas Goudemand for their trust in this project and their oversight.
+
 # References
-
-omics [@Dai:2022]
-https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2022.911861/full
-phenomics [@Houle:2010]
-https://pubmed.ncbi.nlm.nih.gov/21085204/
-computer visions VS DL [@Walsh:2019]
-https://www.researchgate.net/publication/331586553_Deep_Learning_vs_Traditional_Computer_Vision
-
-
-water strider long legs [@Toubiana:2021]
-https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3001157
-
-
-to fulfill two main purposes:
-
-## Hind legs segmentation and measurements
-For water striders or similar insects, `WaterStrideR` allows for legs segmentation and measurements with landmarking of the first two joints when legs are not overlapping with objects such as other legs or individual's bodies. The workflow combines a user-defined initial binary threshold for coarse body isolation with an automatic scaling procedure that achieves sub-pixel precision following our simple protocol, requiring only a small piece of red graph paper.
-
