@@ -71,15 +71,15 @@ WaterStrideR implements a hierarchical segmentation pipeline combining tradition
 # Performance
 `WaterStrideR` enables processing of hundreds of individuals in minutes compared to hours of manual measurement, while maintaining high accuracy (r = 0.982 for femur length). Performance was tested on 6 images containing a total of 269 individuals, produced following the protocol described in the "getting-started" vignette.
 
-**Detection**: Out of 269 manually counted individuals, 262 (97.40%) were detected using `WaterStrideR` default parameters. All undetected individuals were heavily affected by motion blur. No noise was falsely detected as an individual.
+**Detection**: Out of 269 manually counted individuals, 262 (97.4%) were detected using `WaterStrideR` default parameters. All undetected individuals were heavily affected by motion blur. No noise was falsely detected as an individual.
 
-**Leg landmarking**: 78.24% of these individuals had at least one hind leg measured.
+**Leg landmarking**: 78.2% of these individuals had at least one hind leg measured.
 
-**Leg measurement**: Femur length was measured manually in 205 individuals, yielding a Pearson correlation coefficient of 0.982 (p < 2.2 × 10⁻¹⁶, 95% CI = [0.9701, 0.9892]) with `WaterStrideR` output.
+**Leg measurement**: Femur length was measured manually in 205 individuals, yielding a Pearson correlation coefficient of 0.982 ($p < 0.001$, 95% CI = [0.970, 0.989]) with `WaterStrideR` output.
 
 **Feature prediction**: Feature prediction for sex and wing presence was tested using leave-30%-out cross-validation with 1000 samples on individuals for which these features could be determined. 
-- Sex: 98.80% prediction accuracy (95% CI = [0.9877, 0.9883]) on 249 individuals.
-- Wing: 99.56% prediction accuracy (95% CI = [0.9957, 0.9961]) on 249 individuals.
+- Sex: 98.80% prediction accuracy (95% CI = [0.988, 0.988]) on 249 individuals.
+- Wing: 99.56% prediction accuracy (95% CI = [0.996, 0.996]) on 249 individuals.
 
 ## Limitations
 - Inability to compute overlapping legs might lead to bias against male individuals, which have longer legs.
