@@ -222,7 +222,7 @@ gPipeline <- function(# INPUT
     output[["process_data"]] <- list(body_img = body_l_crops, angle = ang, legs = legs,
                                      dilcont = dilcont, inter_idx = inter_idx,
                                      body_centroids = body_centroids, scale = scale, full = full,
-                                     inser = inser)
+                                     inser = inser, crop_base = l_crop)
   }
   return(output)
 }
