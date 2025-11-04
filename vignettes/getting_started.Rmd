@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-WaterStrideR provides automated morphological measurements for water
+`WaterStrideR` provides automated morphological measurements for water
 striders and similar arthropods. The package can fulfill three main
 purposes, depending on your data type and research needs:
 
@@ -36,7 +36,7 @@ can maintain consistent imaging protocols across many individuals.
 
 ## Is WaterStrideR Right for Your Study?
 
-WaterStrideR is designed for arthropods where:
+`WaterStrideR` is designed for arthropods where:
 
 -   2D top-view images are sufficient for leg measurements
 -   You have (or can establish) a standardized imaging setup
@@ -50,7 +50,8 @@ WaterStrideR is designed for arthropods where:
 install.packages("remotes")
 
 #Install the package
-remotes::install_github("arthurgc-sci/WaterStrideR")
+remotes::install_github("arthurgc-sci/WaterStrideR",
+                        build_vignettes = TRUE) #skip if you don't need vignettes
 
 # Load the package
 library(WaterStrideR)
@@ -152,11 +153,11 @@ results <- gRunPipeline(
     plane)
 -   **Background:** White or light-colored, uniform background
 -   **Resolution:** Legs should be at least 2 pixels thick
--   **Positioning:** Specimens flat, legs extended when possible
+-   **Positioning:** Specimens in natural posture, legs extended when possible
 
 ### 2.2 Strict Protocol (*M. longipes* and Optimal Performance)
 
-WaterStrideR was specifically tuned and validated using the following
+`WaterStrideR` was specifically tuned and validated using the following
 protocol:
 
 **Image specifications:**
@@ -175,17 +176,15 @@ protocol:
 
 **Physical setup:**
 
-- Photography rack: \~12 × 16 cm
-- Lighting: Diffuse
-neon white light
-- Background: White paper
+- White rectangular plastic rack: \~12 × 16 cm
+- Lighting: Diffuse neon white light
 
 ```{r echo=FALSE, out.width="100%", fig.align='center'}
 knitr::include_graphics("ex_img/big_example.jpg")
 ```
 
 **Note:** While this strict protocol ensures optimal performance,
-WaterStrideR can work with other setups after proper parameter tuning.
+`WaterStrideR` can work with other setups after proper parameter tuning.
 
 See the **Parameter Tuning vignette** for detailed instructions:
 
@@ -228,7 +227,7 @@ needs.
 **⚠️ Critical Step:** Parameter tuning is required for \~90% of use
 cases.
 
-Before processing your full dataset, calibrate WaterStrideR for your
+Before processing your full dataset, calibrate `WaterStrideR` for your
 specific:
 
 - Organism morphology
@@ -269,7 +268,7 @@ measurements
 
 ### Step 4: Validate Results
 
-WaterStrideR creates graphical outputs linked to the measurement data
+`WaterStrideR` creates graphical outputs linked to the measurement data
 frame, allowing easy quality checks.
 
 See the **Interpreting Outputs vignette** for details:
