@@ -2,7 +2,7 @@
 Allows for acquisition of biologically relevant water strider morphological features from large amounts of image data directly in R. Treatment of pictures with lots of individuals in scientific contexts, e.g. laboratory breeding experiments or large field data.
 #### Main features:
 - For water striders or similar insects: hind leg segmentation and measurements with joint landmarking, using classic computer vision methods.
-– For Microvelia longipes: sex and presence of wings prediction, using machine learning methods.
+- For Microvelia longipes: sex and presence of wings prediction, using machine learning methods.
 - Automatic scale acquisition on images following simple red graph paper protocol.
 
 ## Requirements
@@ -32,7 +32,7 @@ results <- gRunPipeline(your_path,
                         predict_sex_wing = FALSE)
 summary(results)
 ```
-*options for creation of an output folder including diagnostic figures and data as .csv file, manual interactive scaling, and no prediction of sex and presence of wings*
+*Options for creation of an output folder including diagnostic figures and data as .csv file, manual interactive scaling, and no prediction of sex and presence of wings*
 
 ## Documentation
 
@@ -53,13 +53,15 @@ vignette("parameter_tuning", package = "WaterStrideR")
 ## Contributing
 Contributions are welcome! However, this package is provided as-is for a specific research use case.  
 Bug reports and pull requests are welcome but may not be actively reviewed or integrated.
-- Read contribution guidelines [here](https://github.com/arthurgc-sci/WaterStrideR/CONTRIBUTING.md)
+- Read contribution guidelines [here](https://github.com/arthurgc-sci/WaterStrideR/tree/main/CONTRIBUTING.md)
 
 ## Testing
 
-Run package tests in R with:
-```R
-devtools::test(pkg = "WaterStrideR")
+Tests are not built during installation.  
+Run them locally from the source directory:
+
+```r
+devtools::test()
 ```
 
 ## Citation
