@@ -4,14 +4,16 @@
 \alias{pipelineScale}
 \title{Scale method selecter for gPipeline}
 \usage{
-pipelineScale(img, auto_scale, red_thresh = 0.05)
+pipelineScale(img, auto_scale, red_thresh = 0.05, viz = FALSE)
 }
 \arguments{
 \item{img}{c.img or pixset}
 
 \item{auto_scale}{boolean for redRulerScale or manual}
 
-\item{red_thresh}{required difference in intensity between red component
+\item{red_thresh}{required difference in intensity between red component}
+
+\item{viz}{visualization option of redRulerScale
 and other components to detect the red ruler}
 }
 \description{
