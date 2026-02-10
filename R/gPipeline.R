@@ -184,6 +184,7 @@ gPipeline <- function(# INPUT
                        right_tibia = leg_res$left_tibia %>% round,
                        left_femur = leg_res$right_femur %>% round,
                        right_femur = leg_res$left_femur %>% round)
+  legText(df_out)
   if(predict_sex_wing){ #add columns for sex/wing predictions
     df_sw <- data.frame(
       sex = c("F","M")[sex_prediction$class],
@@ -400,4 +401,21 @@ gOneLeg <- function(df_result){
   df_result3 <- df_result2[!is.na(df_result2$femur),]
   
   return(df_result3)
+}
+
+#' Quick leg segmentation summary
+#'
+#' Femur segmentation summary for quick diagnostic in the console
+#'
+#' @param df A dataframe with df_out format from gPipeline
+legText <- function(df){
+  lf <- df$left_femur
+  rf <- df$right_femur
+  n <- nrow(df)
+  nof <- sum(is.na(lf)&is.na(rf))
+  ratiof <- round((sum(!is.na(lf)) + sum(!is.na(rf)))/(n*.02),1)
+  message(
+    paste0("| \n=> Femur length measured on at least one leg in ", n-nof, "/",
+           n, " individuals.\n=> Measured femurs ratio: ", ratiof, "%")
+  )
 }

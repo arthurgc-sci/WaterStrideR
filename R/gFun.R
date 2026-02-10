@@ -338,7 +338,9 @@ gLegInsertion <- function(ori_angle, dil_contour, inter_index,
     res <- mapply(gLegInsertion, ori_angle, dil_contour, inter_index, SIMPLIFY=FALSE)
     return(res)
   }
-  if(is.na(ori_angle) | sum(inter_index)==0) return(list(left=NA, right=NA)) #NA if no angle or no intersection
+  if(is.na(ori_angle) | length(unique(inter_index))==1){
+    return(list(left=NA, right=NA)) #NA if no angle, no intersection or all intersection
+  }
   bary <- apply(dil_contour, 2, mean) #centroid
   #insertion points as intersection sequences
   seq_inter <- gLimbInter(inter_index) #find intersection sequences = limb base points
@@ -395,11 +397,13 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
   leg_split_id <- lapply(insertions, function(inser){ #for each hind leg insertion point :
     tryCatch({
       lapply(split_limbs, function(x){ #for each limb as xy coordinates :
-        overlapPoints(inser, x, coords = FALSE) == TRUE #check if limb is connected to hind leg insertion
-      })}, error = function(e) { NA } #error handling
-    )  %>% unlist %>% which #return as index
+          overlapPoints(inser, x, coords = FALSE) == TRUE #check if limb is connected to hind leg insertion
+        }) %>% unlist %>% which #return as index
+      }, error = function(e) { NA } #error handling
+    )   
   })
   legs <- lapply(leg_split_id, function(id) {
+    if (any(is.na(id[1]))) return(NA)
     tryCatch({ split_limbs[id][[1]] }, #get limbs with index
              error = function(e) { NA })  #return NA if error occur (no matching limb)
   })
