@@ -20,11 +20,9 @@ gLegLandmarks(
 )
 }
 \arguments{
-\item{leg_coords}{numerical matrix or dataframe or list of those types.
-leg points coordinates}
+\item{leg_coords}{leg points coordinates}
 
-\item{insertion}{numerical matrix or dataframe or list of those types.
-insertion points coordinates}
+\item{insertion}{insertion points coordinates}
 
 \item{inser_thresh}{Numerical value in range 0:1 for threshold to remove
 angular points too close to the leg insertion point

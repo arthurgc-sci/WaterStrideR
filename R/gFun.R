@@ -391,7 +391,10 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
     # find limbs
   limbs <- ((dilated_body - gerris) < 0) %>% imager::as.cimg() #full individual minus dilated body
   limbs[coordsToLinear(intersection_coords, limbs)] <- 1 #reattach intersections with body, required for detection
-  split_limbs_img <- limbs %>% imager::split_connected() #images of separated limbs
+  split_limbs_img <- tryCatch({
+    limbs %>% imager::split_connected() #images of separated limbs
+  }, error = function(e) {NA})
+  if(all(is.na(split_limbs_img))) return(list(right=NA, left=NA))
   split_limbs <- lapply(split_limbs_img, imgAsCoords) #as xy coords 
     # get leg points
   leg_split_id <- lapply(insertions, function(inser){ #for each hind leg insertion point :
@@ -416,10 +419,8 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' Ankle and knee position using angle along the contour of the leg,
 #' oriented with the body insertion point
 #'
-#' @param leg_coords numerical matrix or dataframe or list of those types.
-#' leg points coordinates
-#' @param insertion numerical matrix or dataframe or list of those types.
-#' insertion points coordinates
+#' @param leg_coords leg points coordinates
+#' @param insertion insertion points coordinates
 #' @param inser_thresh Numerical value in range 0:1 for threshold to remove
 #' angular points too close to the leg insertion point
 #' (value as fraction of half contour length)
@@ -451,48 +452,17 @@ gLegLandmarks <- function(leg_coords,
                           segment_length_range = c(0.15, 0.6),
                           n_splines = 30,
                           search_w = 6) {
-  
+  if(!all(names(insertion)==names(leg_coords))) stop("Names of insertion and leg_coords must match")
   if(is.null(insertion) | all(is.na(insertion)) |
      is.null(leg_coords) | all(is.na(leg_coords))){ # | length(leg_coords)==2 ???
-    if(msg) message("FAILED TO RECOGNIZE ADEQUATE TYPES")
+    if(msg) message("NA or NULL found")
     return(NA)
-  } #Na handling
-  if(!("dim1" %in% names(insertion))){  #Vectorization assuming nesting "left" "right" structure
-    if(msg) message("Attempting vectorization with $left and $right list structure")
-    pb <- progress::progress_bar$new(total = length(leg_coords))
-    res <- mapply(function(leg, ins){
-      pb$tick()
-      list(
-        left = if( !(all(is.na(leg$left))) | !(all(is.na(ins$left))) ){
-          gLegLandmarks(leg$left, ins$left, 
-                        inser_thresh = inser_thresh,           # Explicit
-                        tresh_ankle = tresh_ankle, 
-                        viz = viz, 
-                        msg = msg,
-                        inflexion_pts_range = inflexion_pts_range,
-                        knee_diff_thresh = knee_diff_thresh,
-                        segment_length_range = segment_length_range,
-                        n_splines = n_splines,
-                        search_w = search_w)
-        } else { NA },
-        right = if( !(all(is.na(leg$right))) | !(all(is.na(ins$right))) ){
-          gLegLandmarks(leg$right, ins$right, 
-                        inser_thresh = inser_thresh,
-                        tresh_ankle = tresh_ankle, 
-                        viz = viz, 
-                        msg = msg,
-                        inflexion_pts_range = inflexion_pts_range,
-                        knee_diff_thresh = knee_diff_thresh,
-                        segment_length_range = segment_length_range,
-                        n_splines = n_splines,
-                        search_w = search_w)
-        } else { NA }
-      )
-    }, leg_coords, insertion, SIMPLIFY = FALSE)
-
-    return(res)
   }
-
+  if(length(leg_coords)<20){
+    if(msg) message("Less than 10 points found in leg_coords")
+    return(NA)
+  }
+  
   #0 - Contour and contour angles
   leg_img <- coordsAsImg(leg_coords, padding=2, return_offset=TRUE) #image conversion for contour algorithm
   leg_cont_offset <- simpleCont(leg_img$img) #contour of image with offset
@@ -500,10 +470,10 @@ gLegLandmarks <- function(leg_coords,
                                    nrow=nrow(leg_cont_offset), ncol=2, byrow=TRUE) #offset correction
   peaks <- tryCatch({contourTurns(cont, search_w = search_w,
                                   splines_df = n_splines, viz = viz_angle)}, #contour angles
-           error = function(e) {
-             if(msg) message("contourTurns() failed : ", e$message)
-             return(NULL)
-           })
+                    error = function(e) {
+                      if(msg) message("contourTurns() failed : ", e$message)
+                      return(NULL)
+                    })
   if(all(is.null(peaks))) {
     if(msg) message("no peak found")
     return(NA)
@@ -579,33 +549,94 @@ gLegLandmarks <- function(leg_coords,
       if(msg) message("incoherent segment sizes relative to contour")
       return(NA)
     }
-    if(viz){
-      par(mfrow=c(1,2))
-      #P1 Inflexion points to insertion point distance + insertion threshold
-      n_p <- length(dist_peaks_str)
-      plot(x = dist_peaks_str, y=rep(1.1,n_p),pch=16,ylim=c(0.2,1.8),
-           xlim = c(0,sum(dist)/2), main="Inflexion Profile")
-      points(x = c(0,sum(dist)), y = c(1,1), col = "blue",pch=16)
-      points(x = dist_peaks_rev, y = rep(0.9,n_p), pch = 16,
-             ylim = c(0.5,1.5), xlim = c(0,sum(dist)))
-      abline(v = sum(dist)/2*inser_thresh, col = "blue")
-      legend("bottomright", legend = c(paste("thresh",inser_thresh),"mid leg"),
-             col = c("blue",1), lty = 1, bty = "n")
-      #P2 Contour reordered around insertion point + inflexion points
-      plot(rbind(cont_inser,cont_inser[1,]), type="l", as=1,
-           main="Leg Contour", lwd=4, col="gray40") #reordered cont
-      points(cont_inser[peaks_inser,],pch=16,cex=1.5) #reordered peaks
-      points(cont_inser[1,],pch=16,col="blue") #insertion as 1st point
-      points(cont_inser[1,],pch=13,cex=2,col="blue") #insertion as 1st point
-      points(knee_pts,cex=1,pch=16,col="forestgreen")
-      lines(knee_pts, lwd=3, col="forestgreen")
-      points(ankle_pts,cex=1,pch=16,col="darkorchid4")
-      lines(ankle_pts, lwd=3, col="darkorchid4")
-      lines(rbind(cont_inser[1,],knee,ankle), lwd=2, lty=4, col="red")
-      points(rbind(knee,ankle),pch=16,cex=1,col="red") #insertion as 1st point
-    }
+    if(viz) vizLegLandmarks(cont_inser, inser_thresh, dist_peaks_str,
+                            dist_peaks_rev, dist, knee, ankle, knee_pts, ankle_pts, peaks_inser)
     return(data.frame(insertion = cont_inser[1,] %>% unlist, knee = knee, ankle = ankle) %>% t)
   } else { return( NA )}
+}
+
+
+#' Visualization function for gLegLandmarks
+#' 
+#' Plot 1: Inflexion points to insertion point distance + insertion threshold
+#' PLot 2: Contour reordered around insertion point + inflexion points
+#' 
+#' @param cont_inser cicular contour
+#' @param inser_thresh threshold to remove angular points too close to the leg insertion point
+#' @param dist_peaks_str distance of each peak to the insertion point
+#' @param dist_peaks_rev counterclockwise distance of each peak to the insertion point
+#' @param dist distance between pairs of points
+#' @param knee knee point
+#' @param ankle ankle point
+#' @param knee_pts potential knee points
+#' @param ankle_pts potential ankle points
+#' @param peaks_inser names to track index in contour
+vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str, dist_peaks_rev,
+                            dist, knee, ankle, knee_pts, ankle_pts, peaks_inser){
+  par(mfrow=c(1,2))
+  #P1 Inflexion points to insertion point distance + insertion threshold
+  n_p <- length(dist_peaks_str)
+  plot(x = dist_peaks_str, y=rep(1.1,n_p),pch=16,ylim=c(0.2,1.8),
+       xlim = c(0,sum(dist)/2), main="Inflexion Profile")
+  points(x = c(0,sum(dist)), y = c(1,1), col = "blue",pch=16)
+  points(x = dist_peaks_rev, y = rep(0.9,n_p), pch = 16,
+         ylim = c(0.5,1.5), xlim = c(0,sum(dist)))
+  abline(v = sum(dist)/2*inser_thresh, col = "blue")
+  legend("bottomright", legend = c(paste("thresh",inser_thresh),"mid leg"),
+         col = c("blue",1), lty = 1, bty = "n")
+  #P2 Contour reordered around insertion point + inflexion points
+  plot(rbind(cont_inser,cont_inser[1,]), type="l", as=1,
+       main="Leg Contour", lwd=4, col="gray40") #reordered cont
+  points(cont_inser[peaks_inser,],pch=16,cex=1.5) #reordered peaks
+  points(cont_inser[1,],pch=16,col="blue") #insertion as 1st point
+  points(cont_inser[1,],pch=13,cex=2,col="blue") #insertion as 1st point
+  points(knee_pts,cex=1,pch=16,col="forestgreen")
+  lines(knee_pts, lwd=3, col="forestgreen")
+  points(ankle_pts,cex=1,pch=16,col="darkorchid4")
+  lines(ankle_pts, lwd=3, col="darkorchid4")
+  lines(rbind(cont_inser[1,],knee,ankle), lwd=2, lty=4, col="red")
+  points(rbind(knee,ankle),pch=16,cex=1,col="red") #insertion as 1st point
+}
+
+
+#' Loop logic for leg landmarking in gPipeline
+#' 
+#' @param leg_coords numerical matrix or dataframe or list of those types.
+#' leg points coordinates
+#' @param insertion numerical matrix or dataframe or list of those types.
+#' insertion points coordinates
+#' @param ... arguments to be passed to gLegLandmarks
+gLegLandmarksLoop <- function(leg_coords, insertion, ...){
+  get_res <- function(leg, ins){
+    list(
+      left = if( !(all(is.na(leg$left))) | !(all(is.na(ins$left))) ){
+        gLegLandmarks(leg$left, ins$left, ...)
+      } else { NA },
+      right = if( !(all(is.na(leg$right))) | !(all(is.na(ins$right))) ){
+        gLegLandmarks(leg$right, ins$right, ...)
+      } else { NA }
+    )
+  }
+  
+  if(("dim1") %in% names(insertion)) stop("Only one leg data was provided try gLegLandmarks instead")
+  
+  #A - structure = right+left
+  if("left" %in% names(insertion)){
+    if("right" %in% names(insertion) && length(names(insertion))==2){ 
+      return(get_res(leg_coords, insertion))
+    } else stop("'left' was found as leg_coords name but names(insertion) are not 'right' and 'left'")
+  }
+  
+  #B - structure = list of right+left
+  if(all(sapply(insertion, \(i) all(names(i) %in% c("left","right"))))){
+    pb <- progress::progress_bar$new(total = length(leg_coords))
+    res <- mapply(function(leg, ins){
+      pb$tick()
+      get_res(leg, ins)
+    }, leg_coords, insertion, SIMPLIFY = FALSE)
+    
+    return(res)
+  } else stop("unknown data structure")
 }
 
 #' Connect leg landmarks with body

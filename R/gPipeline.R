@@ -147,7 +147,7 @@ gPipeline <- function(# INPUT
                   insertions = inser)
   message("| \n7 - Leg landmarking & measurement")
   #7 - Get Points of interest from leg
-  leg_lm0 <- gLegLandmarks(leg_coords = legs, insertion = inser, viz=FALSE, msg=FALSE,
+  leg_lm0 <- gLegLandmarksLoop(leg_coords = legs, insertion = inser, viz=FALSE, msg=FALSE,
                            search_w = k.leglm_search_w,
                            n_splines = k.leglm_splines_df,
                            inser_thresh = f.leg_inser_thresh,
@@ -298,12 +298,17 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
                            basename(img_path_list[img_path_i]), ignore.case = TRUE)
     message(paste0("\n  ",img_path_i,"/",img_path_length,
                    " - Processing image \"",clean_base_path,"\"\n  |"))
-    pipe_result <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
-              write_output=TRUE,
-              return_df=TRUE, #return dataframe of each image analysis
-              single_write=FALSE, #writing format for whole directory
-              ...) #gPipeline arguments
-    if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
+    tryCatch({
+      pipe_result <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
+                               write_output=TRUE,
+                               return_df=TRUE, #return dataframe of each image analysis
+                               single_write=FALSE, #writing format for whole directory
+                               ...) #gPipeline arguments
+      if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
+    }, error = function(e) { #gPipeline full crash handling, probably needs debugging
+      warning(paste("gPipeline Failure on",clean_base_path,
+                    " no result will be returned for this image.\n",e$message))
+    })
   }
   #create and save dataframe
   multi_df_out <- do.call(rbind, df_out_list)
@@ -329,6 +334,7 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
 #' @seealso [gPipeline()]
 #' @export
 gRunPipeline <- function(img_path, return_df=TRUE, ...){
+  t0 <- Sys.time()
   #1 check if path is an image
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
   if( grepl(img_pattern, img_path, ignore.case = TRUE) ){ #if provided path is a single img path
@@ -358,6 +364,7 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
       }
     }
   }
+  message(paste("**********\nJob done in",round(Sys.time()-t0,2),"s"))
 }
 
 #' Keep only one tibia and one femur column
@@ -415,7 +422,7 @@ legText <- function(df){
   nof <- sum(is.na(lf)&is.na(rf))
   ratiof <- round((sum(!is.na(lf)) + sum(!is.na(rf)))/(n*.02),1)
   message(
-    paste0("| \n=> Femur length measured on at least one leg in ", n-nof, "/",
-           n, " individuals.\n=> Measured femurs ratio: ", ratiof, "%")
+    paste0("| \n|_ Femur length measured on at least one leg in ", n-nof, "/",
+           n, " individuals.\n|_ Measured femurs ratio: ", ratiof, "%")
   )
 }
