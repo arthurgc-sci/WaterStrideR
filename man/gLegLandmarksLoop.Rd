@@ -13,8 +13,10 @@ leg points coordinates}
 \item{insertion}{numerical matrix or dataframe or list of those types.
 insertion points coordinates}
 
-\item{...}{arguments to be passed to gLegLandmarks}
+\item{...}{arguments to be passed to gLegLandmarks()}
 }
 \description{
-Loop logic for leg landmarking in gPipeline
+Allows handling of more than one leg when provided with a specific input structure :
+Use case 1 - One individual : assumes named list of two elements "right" and "left"
+Use case 2 - Multiple individuals : assumes list of individuals as described in case 1
 }

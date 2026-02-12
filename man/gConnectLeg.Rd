@@ -14,6 +14,6 @@ gConnectLeg(body, landmarks, viz = FALSE)
 \item{viz}{logical.visualization option}
 }
 \description{
-As gLegLandmarks finds insertion point on dilated body, the insertion landmark is biased
-Given body as xy coords and landmarks as output of gLegLandmarks, corrects the insertion point
+As gLegLandmarks() finds insertion point on dilated body, the insertion landmark is biased
+Given body as xy coords and landmarks as output of gLegLandmarks(), corrects the insertion point
 }

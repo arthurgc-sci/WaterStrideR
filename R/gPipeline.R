@@ -364,7 +364,8 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
       }
     }
   }
-  message(paste("**********\nJob done in",round(Sys.time()-t0,2),"s"))
+  elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  message(sprintf("**********\nJob done in %.2f s", elapsed))
 }
 
 #' Keep only one tibia and one femur column

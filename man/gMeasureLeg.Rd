@@ -12,5 +12,5 @@ gMeasureLeg(landmarks, scale)
 \item{scale}{a numerical value for conversion from pixels to micrometers}
 }
 \description{
-Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg or gLegLandmarks
+Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg() or gLegLandmarks()
 }

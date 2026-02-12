@@ -480,7 +480,13 @@ gLegLandmarks <- function(leg_coords,
   }
   # 1 - Find insertion
   lcont <- nrow(cont) #n points of contour
-  inser_id <- overlapPoints(cont, insertion, coords=FALSE) %>% which #insertion id in leg contour
+  overlap <- overlapPoints(cont, insertion, coords=FALSE)
+  if(all(overlap==F)){ #insertion not overlapping with contour?
+    inser_id <- which.min(sqrt((cont[,1]-as.numeric(insertion[1]))^2
+                               +(cont[,2]-as.numeric(insertion[2]))^2))[1] #get closest
+    insertion <- cont[inser_id,]
+  } else inser_id <- overlap %>% which #insertion id in leg contour
+  reord <- (inser_id:(inser_id + lcont-1)) %% lcont +1#contour index insertion points as origin
   reord <- (inser_id:(inser_id + lcont-1)) %% lcont +1#contour index insertion points as origin
   cont_inser <- rbind(cont[reord,], cont[reord[1],]) #cicular contour
   peaks_inser <- sapply(peaks, function(x) which(reord %in% x)) %>% sort
@@ -492,13 +498,12 @@ gLegLandmarks <- function(leg_coords,
   names(dist_peaks_rev)[1] <- "1"
   dist_peaks <- list(dist_peaks_str, dist_peaks_rev)
   if(length(peaks_inser) >= min(inflexion_pts_range) &&
-     length(peaks_inser) <= max(inflexion_pts_range)){ #incoherent number of inflexion points
+     length(peaks_inser) <= max(inflexion_pts_range)){ #coherent number of inflexion points
     check_detection <- TRUE
     #2 Ignore inflexion points too close to the insertion, as they probably correspond to the inflexion
     cont_half_l <- dist_cont/2 #leg contour half length
     filt_id <- lapply(dist_peaks, function(x) (x >= cont_half_l*inser_thresh))#filtered id in dist_peaks & peaks_inser
     #3 Knees
-    #TODO REPLACE knee_dist !!!
     filt_cont_pts <- lapply(filt_id, function(y) {
       ids <- y %>% names %>% as.numeric #numeric id
       filt_ids <- ids[y] #valid numeric id
@@ -507,8 +512,6 @@ gLegLandmarks <- function(leg_coords,
     knee_abs_dist <- sapply(filt_cont_pts, function(x){
       (insertion-x)^2 %>% sum %>% sqrt #distance
     })
-    #old // mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id)
-    #old // if((diff(knee_dist / cont_half_l) %>% abs) < 0.2) {  #if the dif between the two knee-ankle distances is below 20% of half contour length
     knee_dist <- mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id) #for later
     knee_abs_diff <- (knee_abs_dist %>% diff / sum(knee_abs_dist)) %>% abs
     if(knee_abs_diff < knee_diff_thresh) { 
@@ -536,6 +539,7 @@ gLegLandmarks <- function(leg_coords,
     if(msg) message("incoherent number of inflexion points")
     check_detection <- FALSE
   } #incoherent number of inflexion points
+  
   if(check_detection){ #sucessful detection of components
     knee_pts <- do.call(rbind, filt_cont_pts)
     ankle_pts <- cont_inser[names(ankle_dist) %>% as.numeric, ]
@@ -549,6 +553,16 @@ gLegLandmarks <- function(leg_coords,
       if(msg) message("incoherent segment sizes relative to contour")
       return(NA)
     }
+    knee_joint_wdth <- dist(knee_pts)
+    ankle_joint_wdth <- dist(ankle_pts)
+    femur_len <- rbind(cont_inser[1,], knee) %>% dist
+    tibia_len <- rbind(ankle, knee) %>% dist
+    if(any(max(knee_joint_wdth, ankle_joint_wdth) > c(femur_len,tibia_len))){
+      return(NA) #any joint wider than tibia or femur
+    }
+    if(0 <= -0.6*max(tibia_len,femur_len)+abs(tibia_len-femur_len)){
+      return(NA) #any segment (tibia or femur) smaller than 40% of the other
+    }
     if(viz) vizLegLandmarks(cont_inser, inser_thresh, dist_peaks_str,
                             dist_peaks_rev, dist, knee, ankle, knee_pts, ankle_pts, peaks_inser)
     return(data.frame(insertion = cont_inser[1,] %>% unlist, knee = knee, ankle = ankle) %>% t)
@@ -556,7 +570,7 @@ gLegLandmarks <- function(leg_coords,
 }
 
 
-#' Visualization function for gLegLandmarks
+#' Visualization function for gLegLandmarks()
 #' 
 #' Plot 1: Inflexion points to insertion point distance + insertion threshold
 #' PLot 2: Contour reordered around insertion point + inflexion points
@@ -568,8 +582,8 @@ gLegLandmarks <- function(leg_coords,
 #' @param dist distance between pairs of points
 #' @param knee knee point
 #' @param ankle ankle point
-#' @param knee_pts potential knee points
-#' @param ankle_pts potential ankle points
+#' @param knee_pts knee joint points
+#' @param ankle_pts ankle joint points
 #' @param peaks_inser names to track index in contour
 vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str, dist_peaks_rev,
                             dist, knee, ankle, knee_pts, ankle_pts, peaks_inser){
@@ -601,11 +615,15 @@ vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str, dist_peaks
 
 #' Loop logic for leg landmarking in gPipeline
 #' 
+#' Allows handling of more than one leg when provided with a specific input structure :
+#' Use case 1 - One individual : assumes named list of two elements "right" and "left"
+#' Use case 2 - Multiple individuals : assumes list of individuals as described in case 1
+#' 
 #' @param leg_coords numerical matrix or dataframe or list of those types.
 #' leg points coordinates
 #' @param insertion numerical matrix or dataframe or list of those types.
 #' insertion points coordinates
-#' @param ... arguments to be passed to gLegLandmarks
+#' @param ... arguments to be passed to gLegLandmarks()
 gLegLandmarksLoop <- function(leg_coords, insertion, ...){
   get_res <- function(leg, ins){
     list(
@@ -641,8 +659,8 @@ gLegLandmarksLoop <- function(leg_coords, insertion, ...){
 
 #' Connect leg landmarks with body
 #'
-#' As gLegLandmarks finds insertion point on dilated body, the insertion landmark is biased
-#' Given body as xy coords and landmarks as output of gLegLandmarks, corrects the insertion point
+#' As gLegLandmarks() finds insertion point on dilated body, the insertion landmark is biased
+#' Given body as xy coords and landmarks as output of gLegLandmarks(), corrects the insertion point
 #'
 #' @param body dataframe or matrix of body points coordinates 
 #' @param landmarks landmarks as output of gLegLandmarks()
@@ -700,7 +718,7 @@ gConnectLeg <- function(body, landmarks, viz=FALSE){
 
 #' Measure tibia and femur
 #'
-#' Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg or gLegLandmarks
+#' Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg() or gLegLandmarks()
 #'
 #' @param landmarks landmarks as output of gLegLandmarks()
 #' @param scale a numerical value for conversion from pixels to micrometers

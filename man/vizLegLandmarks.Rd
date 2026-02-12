@@ -2,7 +2,7 @@
 % Please edit documentation in R/gFun.R
 \name{vizLegLandmarks}
 \alias{vizLegLandmarks}
-\title{Visualization function for gLegLandmarks}
+\title{Visualization function for gLegLandmarks()}
 \usage{
 vizLegLandmarks(
   cont_inser,
@@ -32,9 +32,9 @@ vizLegLandmarks(
 
 \item{ankle}{ankle point}
 
-\item{knee_pts}{potential knee points}
+\item{knee_pts}{knee joint points}
 
-\item{ankle_pts}{potential ankle points}
+\item{ankle_pts}{ankle joint points}
 
 \item{peaks_inser}{names to track index in contour}
 }

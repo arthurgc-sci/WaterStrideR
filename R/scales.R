@@ -114,6 +114,7 @@ nZeros <- function(text, zeros=1){
 #' confidence interval value to build the error margin from
 #' @param viz logical. visualization option
 #' @param msg logical. console message option
+#' @importFrom stats dist
 #' @export
 redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FALSE, msg=TRUE){
   # Get ruler as the biggest set of red pixels from the image
@@ -144,21 +145,14 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FA
   tile_pos <- as.data.frame(do.call(rbind, mean_px_val)) #dataframe with xy mean position of the ruler's tiles
   n_tiles <- nrow(tile_pos) #number of tiles
   pb <- progress::progress_bar$new(total = n_tiles-1)
-  distances <- numeric(n_tiles * (n_tiles - 1) / 2) #number of possible combinations between points
-  k <- 1
-  for(i in 1:(n_tiles - 1)) {
-    pb$tick()
-    for(j in (i+1):n_tiles) {
-      distances[k] <- eu_dist(tile_pos[i,], tile_pos[j,])
-      k <- k+1
-    }
-  }
+  distances <- tile_pos %>% dist %>% as.vector #all possible distances between every tiles centroids
   
   # Get mean distance (pixels) between two adjacent tiles (mm)
   if(msg) message("--- scaling - Computing scale...")
-  d_hist <- hist(distances, breaks = 500, plot=FALSE) #inbetween tiles distances histogram
+  n_breaks <- 2*n_tiles+200 #adaptative breaks: less data <=> wider breaks
+  d_hist <- hist(distances, breaks = n_breaks, plot=FALSE) #inbetween tiles distances histogram
   counts_spiked <- spikePlateau(d_hist$counts) #add 'spikes' because pracma::findpeaks does not detect flat peaks, which can frequently happen in histograms
-  h_peaks <- pracma::findpeaks(counts_spiked, threshold = 0.2 * max(counts_spiked)) #histogram peaks
+  h_peaks <- pracma::findpeaks(counts_spiked, threshold = 0.15 * max(counts_spiked)) #histogram peaks
   h_thresh <- d_hist$mids[h_peaks[1:2, 2]] %>% mean #mean value between the first two peaks, used as threshold to select 1st peaks surrounding values
   unit_dist <- distances[distances < h_thresh] / 1000
   unit_dist_mean <- unit_dist %>% mean #mean pixel amount for 1 micron
