@@ -364,8 +364,8 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
       }
     }
   }
-  elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  message(sprintf("**********\nJob done in %.2f s", elapsed))
+  elapsed <- as.numeric(difftime(Sys.time(), t0, units = "min"))
+  message(sprintf("**********\nJob done in %.2f min", elapsed))
 }
 
 #' Keep only one tibia and one femur column
@@ -417,13 +417,13 @@ gOneLeg <- function(df_result){
 #'
 #' @param df A dataframe with df_out format from gPipeline
 legText <- function(df){
-  lf <- df$left_femur
-  rf <- df$right_femur
+  lf <- df$left_tibia
+  rf <- df$right_tibia
   n <- nrow(df)
   nof <- sum(is.na(lf)&is.na(rf))
   ratiof <- round((sum(!is.na(lf)) + sum(!is.na(rf)))/(n*.02),1)
   message(
-    paste0("| \n|_ Femur length measured on at least one leg in ", n-nof, "/",
-           n, " individuals.\n|_ Measured femurs ratio: ", ratiof, "%")
+    paste0("| \n|_ Tibia length measured on at least one leg in ", n-nof, "/",
+           n, " individuals.\n|_ Measured tibias ratio: ", ratiof, "%")
   )
 }
