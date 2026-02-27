@@ -16,7 +16,8 @@ gGerrisPlot(
   leg_size,
   inser,
   clean_base_path,
-  body_L_pts
+  body_L_pts,
+  body_length
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ gGerrisPlot(
 \item{clean_base_path}{Similar to the internal variable of the same name in gPipeline()}
 
 \item{body_L_pts}{Similar to the internal variable of the same name in gPipeline()}
+
+\item{body_length}{Similar to the internal variable of the same name in gPipeline()}
 }
 \description{
 Individual plot for gPipeline, designed to be used on lists of internal

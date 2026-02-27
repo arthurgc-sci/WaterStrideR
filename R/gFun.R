@@ -762,11 +762,12 @@ gMeasureLeg <- function(landmarks, scale){
 #' @param inser Similar to the internal variable of the same name in gPipeline()
 #' @param clean_base_path Similar to the internal variable of the same name in gPipeline()
 #' @param body_L_pts Similar to the internal variable of the same name in gPipeline()
+#' @param body_length Similar to the internal variable of the same name in gPipeline()
 #' 
 #' @importFrom graphics lines
 #' @export
 gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
-                        leg_lm, leg_size, inser, clean_base_path, body_L_pts){
+                        leg_lm, leg_size, inser, clean_base_path, body_L_pts, body_length){
   legend_err <- c()
   full_coords <- full[[i]] %>% imgAsCoords
   body_coords <- body[[i]]
@@ -786,12 +787,22 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
     plot(body[[i]], cex=0.1)
     text(x=body[[i]][,1]%>%mean,y=body[[i]][,2]%>%mean,labels='FULL BODY SEGMENTATION FAILED')
   }
-  bodyext <- body_L_pts[[i]] #Check body length measurement
-  if(length(bodyext)==4 && all(is.numeric(bodyext))){
-    lines(bodyext, lwd=2, col="black")
-    points(bodyext, pch=16, col="black")
-  }
   centroid <- cen[[i]]
+  bodyext <- body_L_pts[[i]] #Check body length measurement
+  if(length(bodyext)==6 && all(is.numeric(bodyext))){
+    mapped_ext <- bodyext[1:2,] + matrix(rep(centroid-bodyext[3,],each=2),ncol=2)
+    lines(mapped_ext, lwd=2, col="black")
+    points(mapped_ext, pch=16, col="black")
+    size <- round(body_length[[i]])
+    off <- 0.2; ft <- 11; colo <- "#D3D3D3"; posi <- 2
+    cenx <- centroid[1]; ceny <- centroid[2]
+    text(x=cenx-off, y=ceny-off, font=ft, labels=size, col=colo, pos=posi) #dark outline
+    text(x=cenx+off, y=ceny+off, font=ft, labels=size, col=colo, pos=posi)
+    text(x=cenx-off, y=ceny+off, font=ft, labels=size, col=colo, pos=posi)
+    text(x=cenx+off, y=ceny-off, font=ft, labels=size, col=colo, pos=posi)
+    text(x=cenx, y=ceny, font=11, labels=size,
+         col="black", pos=posi)
+  }
   if(is.numeric(centroid) && length(centroid)==2){
     points(centroid[1], centroid[2], pch = 16, col = "magenta") #centroid
     points(dilcont[[i]], type = "l", lty = 2, col = "magenta3") #dilated contour
@@ -824,7 +835,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
           size <- round(size)
           off <- 0.2
           ft <- 11
-          colo <- "#000000E6" #E6 is for transparency
+          colo <- "#000000E6" #transparency
           posi <- 2
           text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi) #dark outline
           text(x=pt[1]+off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)

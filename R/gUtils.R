@@ -187,6 +187,23 @@ checkSym <- function(pts, angle = 0, cuts = 10){
 #' @importFrom stats optimize
 #' @export
 bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
+  if(is.list(body_pts)){ #vectorization if needed
+    pb <- progress::progress_bar$new(total=length(body_pts))
+    res0 <- lapply(body_pts, function(x){
+      pb$tick()
+      bodyLength(x, viz, return_ext)
+    })
+    if(return_ext){
+      res <- list(
+        len = sapply(res0, \(x) x$len),
+        body_L_pts = lapply(res0, \(x) x$body_L_pts)
+      )
+    } else {
+      res <- unlist(res0)
+    }
+    return(res)
+  }
+  
   #local symmetric angle optimization using PCA angle as prior 
   pca <- prcomp(body_pts) #PCA to find major axis
   anglePC <- atan2(pca$rotation[2,1], pca$rotation[1,1]) #rotation angle
@@ -219,13 +236,14 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
   ext_pts <- cbind(x_int, centy) #as coordinates
   
   #results
-  actual_ext_pts <- ext_pts %*% rotMat(-best_angle) #points to plot in diag
   len <- as.numeric(abs(dist(ext_pts))+3) #+2 as minimum of observation calibration (VS GMM full body threshold)
+  actual_ext_pts <- rbind(ext_pts %*% rotMat(-best_angle), colMeans(body_pts)) #points to plot in diag + add centroid
+
   #+1 to account for usage of pixel coords instead of full pixels (+0.5 on each side)
   if(viz){
     plot(body_pts,as=1)
     points(cont,t="l")
-    lines(actual_ext_pts, lwd=3, col=2)
+    lines(actual_ext_pts[1:2,], lwd=3, col=2)
     actual_ext_pts %>% points(pch=16)
   }
   if(return_ext){

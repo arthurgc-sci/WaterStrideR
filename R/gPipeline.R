@@ -95,8 +95,8 @@ gPipeline <- function(# INPUT
   clean_body_points <- cleanBodyShape(body_lab_points,
                                       kernel_size = k.clean_kernel)
   #Body length
-  bl_output <- lapply(clean_body_points, function(b) bodyLength(b, return_ext=TRUE))
-  body_length_pix <- sapply(bl_output, \(x) x$len) #extract body length in pixels
+  bl_output <- bodyLength(clean_body_points, return_ext=TRUE)
+  body_length_pix <- bl_output$len
   body_length <- body_length_pix/scale[1] #conversion in mm
   if(auto_scale){
     error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
@@ -205,11 +205,11 @@ gPipeline <- function(# INPUT
       gDetectionPlot(base_img=base_img, scale=scale, x=x_cen, y=y_cen, auto_scale=auto_scale)
     }
     # Individuals metrics plot
-    body_L_pts <- lapply(bl_output, \(x) x$body_L_pts)
+    body_L_pts <- bl_output$body_L_pts
     i_plots <- lapply(seq_along(body_l_crops), function(i) {
       function(){ #save arguments to be called later
         gGerrisPlot(i, full, body, cen, dilcont, ang, legs,
-                    leg_lm, leg_size, inser, clean_base_path, body_L_pts)
+                    leg_lm, leg_size, inser, clean_base_path, body_L_pts, body_length)
       }
     })
     # Write plots and dataframe
