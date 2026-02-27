@@ -172,7 +172,7 @@ checkSym <- function(pts, angle = 0, cuts = 10){
   dist_val <- tapply(pts[,2], #for each y values in 10 bins along x elongation : 
                           cut(pts[,1], cuts), 
                           function(y) (0.5-sum(y>0)/length(y))^2 ) #squared diff from 50/50 above/under
-  return(mean(dist_val)) #return mean value to gain independence to the value of cuts
+  return(mean(dist_val, na.rm=TRUE)) #return mean value to gain independence to the value of cuts
 }
 
 #' Body length from body points
@@ -236,7 +236,7 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
   ext_pts <- cbind(x_int, centy) #as coordinates
   
   #results
-  len <- as.numeric(abs(dist(ext_pts))+3) #+2 as minimum of observation calibration (VS GMM full body threshold)
+  len <- as.numeric(abs(dist(ext_pts))+1) #+2 as minimum of observation calibration (VS GMM full body threshold)
   actual_ext_pts <- rbind(ext_pts %*% rotMat(-best_angle), colMeans(body_pts)) #points to plot in diag + add centroid
 
   #+1 to account for usage of pixel coords instead of full pixels (+0.5 on each side)
