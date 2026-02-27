@@ -39,10 +39,10 @@ test_that("Angle computation along contour: contourAngles + contourTurns",{
 })
 
 #bodyLength + imgAsCoords
-test_that("Images can be converted to points for measurments",{
+test_that("Images can be converted to points for measurements",{
   img_bod <- readRDS(test_path("fixtures", "img_body.rds"))
   pts_bod <- imgAsCoords(img_bod)
-  expect_equal(bodyLength(pts_bod) %>% round(.,7), 136.841084)
+  expect_equal(bodyLength(pts_bod, return_ext=TRUE)[["len"]] %>% round(.,3), 138.752)
 })
 
 #cleanBodyShape

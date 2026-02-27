@@ -761,9 +761,12 @@ gMeasureLeg <- function(landmarks, scale){
 #' @param leg_size Similar to the internal variable of the same name in gPipeline()
 #' @param inser Similar to the internal variable of the same name in gPipeline()
 #' @param clean_base_path Similar to the internal variable of the same name in gPipeline()
+#' @param body_L_pts Similar to the internal variable of the same name in gPipeline()
+#' 
+#' @importFrom graphics lines
 #' @export
 gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
-                        leg_lm, leg_size, inser, clean_base_path){
+                        leg_lm, leg_size, inser, clean_base_path, body_L_pts){
   legend_err <- c()
   full_coords <- full[[i]] %>% imgAsCoords
   body_coords <- body[[i]]
@@ -782,6 +785,11 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
   } else {
     plot(body[[i]], cex=0.1)
     text(x=body[[i]][,1]%>%mean,y=body[[i]][,2]%>%mean,labels='FULL BODY SEGMENTATION FAILED')
+  }
+  bodyext <- body_L_pts[[i]] #Check body length measurement
+  if(length(bodyext)==4 && all(is.numeric(bodyext))){
+    lines(bodyext, lwd=2, col="black")
+    points(bodyext, pch=16, col="black")
   }
   centroid <- cen[[i]]
   if(is.numeric(centroid) && length(centroid)==2){

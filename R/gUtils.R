@@ -145,16 +145,98 @@ contourAngles <- function(coords, search_w = 5){
   return(angcont)
 }
 
-#' Body length from body points
+#' Fast body length from body points
+#'
+#' Fast body length measurement using max x values of PCA rotation
 #'
 #' @param body_points a dataframe or matrix of body points coordinates
 #' @export
-bodyLength <- function(body_points){
+bodyLengthPC <- function(body_points){
   long_angle <- major_axis_angle(body_points) #elongation axis angle of the body
   proj_body <- body_points[,1]*cos(long_angle) + body_points[,2]*sin(long_angle) #coordinates on this axis
   return(max(proj_body)-min(proj_body)) #body length
 }
 
+#' Check point cloud symmetry along an angle
+#' 
+#' Bilateral asymmetry scoring for a point cloud of constant density using
+#' ratio of points above centroid in multiple bins along x-axis (after rotation using angle)
+#' 
+#' @param pts binary object as point cloud of even density
+#' @param angle angle in rad
+#' @param cuts number of bins to create along x
+#' @export
+checkSym <- function(pts, angle = 0, cuts = 10){
+  pts = pts %*% rotMat(angle) #rotate
+  pts = scale(pts,scale=F,center=T) #center
+  dist_val <- tapply(pts[,2], #for each y values in 10 bins along x elongation : 
+                          cut(pts[,1], cuts), 
+                          function(y) (0.5-sum(y>0)/length(y))^2 ) #squared diff from 50/50 above/under
+  return(mean(dist_val)) #return mean value to gain independence to the value of cuts
+}
+
+#' Body length from body points
+#'
+#' Body length as distance between intersections of body outline with line passing
+#' through the centroid of the body and minimizing lateral point density difference 
+#' along body elongation axis defined using PCA 
+#'
+#' @param body_pts binary object as point cloud of even density
+#' @param viz logical. visualization option
+#' @param return_ext logical. output format, if TRUE, also returns points between which length was measured
+#' @importFrom stats optimize
+#' @export
+bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
+  #local symmetric angle optimization using PCA angle as prior 
+  pca <- prcomp(body_pts) #PCA to find major axis
+  anglePC <- atan2(pca$rotation[2,1], pca$rotation[1,1]) #rotation angle
+  opt <- optimize(
+    f = function(angle) checkSym(body_pts, angle),
+    interval = anglePC + c(-0.4, 0.4) #approx pi/8
+  )
+  best_angle <- opt$minimum #optimized point density based symmetry
+  
+  #contour extraction and format
+  cooim <- coordsAsImg(body_pts,5,T) #img needed for contour
+  contoff <- simpleCont(cooim$img) #contour
+  cont <- contoff + matrix(cooim$coord_offset[1,],
+                           ncol=2,nrow=nrow(contoff),byrow=T) #back to base referential
+  contf <- as.matrix(cont) %*% rotMat(best_angle) #rotate
+  contc <- rbind(contf,contf[1,]) #close contour
+  
+  #get intersections of contour with y=0
+  centy <- mean(contc[,2]) #mean y
+  x <- contc[,1]; y <- contc[,2] - centy #center x and y
+  idx <- which(diff(sign(y)) != 0) #y cross 0
+  x1 <- x[idx]; y1 <- y[idx] #corresponding pts coords
+  x2 <- x[idx + 1]; y2 <- y[idx + 1] #corresponding pts coords
+  x_itx <- x1 - y1 * (x2 - x1) / (y2 - y1) #linear interpolation
+  if(length(x_itx)<2){ #safety
+    warning("Found less than 2 intersections of centered body outline with x axis")
+    return(NA)
+  }
+  x_int <- c(min(x_itx),max(x_itx)) #x coords of maximums
+  ext_pts <- cbind(x_int, centy) #as coordinates
+  
+  #results
+  actual_ext_pts <- ext_pts %*% rotMat(-best_angle) #points to plot in diag
+  len <- as.numeric(abs(dist(ext_pts))+3) #+2 as minimum of observation calibration (VS GMM full body threshold)
+  #+1 to account for usage of pixel coords instead of full pixels (+0.5 on each side)
+  if(viz){
+    plot(body_pts,as=1)
+    points(cont,t="l")
+    lines(actual_ext_pts, lwd=3, col=2)
+    actual_ext_pts %>% points(pch=16)
+  }
+  if(return_ext){
+    return(list(
+      len = len,
+      body_L_pts = actual_ext_pts
+    )) 
+  } else {
+    return(len)
+  }
+}
 
 #'Load and binarize image
 #'
@@ -486,3 +568,11 @@ boolSeqLim <- function(v, circular = TRUE){ #circular :
   }
   return(list("first" = i_first, "last" = i_last))
 }
+
+#' Make 2D rotation matrix
+#'
+#' @param angle angle in rad
+rotMat <- function(angle){
+  matrix(c(cos(-angle), -sin(-angle), sin(-angle), cos(-angle)), 2, 2)
+}
+

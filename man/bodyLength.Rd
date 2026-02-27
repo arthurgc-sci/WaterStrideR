@@ -4,11 +4,17 @@
 \alias{bodyLength}
 \title{Body length from body points}
 \usage{
-bodyLength(body_points)
+bodyLength(body_pts, viz = FALSE, return_ext = FALSE)
 }
 \arguments{
-\item{body_points}{a dataframe or matrix of body points coordinates}
+\item{body_pts}{binary object as point cloud of even density}
+
+\item{viz}{logical. visualization option}
+
+\item{return_ext}{logical. output format, if TRUE, also returns points between which length was measured}
 }
 \description{
-Body length from body points
+Body length as distance between intersections of body outline with line passing
+through the centroid of the body and minimizing lateral point density difference
+along body elongation axis defined using PCA
 }

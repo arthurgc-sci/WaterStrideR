@@ -84,23 +84,23 @@ gPipeline <- function(# INPUT
                         threshold = k.bin_thresh) #load and binarize image
   #Segmenting image
   body_lab_points <- gFastSeg(img_bin, px_range=k.body_size_px_range, viz=FALSE) #segmentation
-  #Body base metrics
-  body_length_pix <- unlist(lapply(body_lab_points, bodyLength)) #length in pixels of bodies
-  body_centroids <- lapply(body_lab_points, function(i) { #body centroids
-    apply(i, 2, mean)
-  })
+  body_centroids <- lapply(body_lab_points, function(i) apply(i, 2, mean)) #body centroids
+    
   message("| \n2 - Computing scale")
   #Scale
   scale <- pipelineScale(base_img, auto_scale,
                          red_thresh = f.red_thresh) #get scale
   message("| \n3 - Computing body")
+  #Clean bodies
+  clean_body_points <- cleanBodyShape(body_lab_points,
+                                      kernel_size = k.clean_kernel)
+  #Body length
+  bl_output <- lapply(clean_body_points, function(b) bodyLength(b, return_ext=TRUE))
+  body_length_pix <- sapply(bl_output, \(x) x$len) #extract body length in pixels
   body_length <- body_length_pix/scale[1] #conversion in mm
   if(auto_scale){
     error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
   } else error_margin <- NA
-  #clean bodies
-  clean_body_points <- cleanBodyShape(body_lab_points,
-                                      kernel_size = k.clean_kernel)
   #Remove bodies
   im_nobodies <- gNobody(base_img = base_img, body_lab_points = clean_body_points, viz=FALSE)
   #Size based ind crop
@@ -205,10 +205,11 @@ gPipeline <- function(# INPUT
       gDetectionPlot(base_img=base_img, scale=scale, x=x_cen, y=y_cen, auto_scale=auto_scale)
     }
     # Individuals metrics plot
+    body_L_pts <- lapply(bl_output, \(x) x$body_L_pts)
     i_plots <- lapply(seq_along(body_l_crops), function(i) {
       function(){ #save arguments to be called later
         gGerrisPlot(i, full, body, cen, dilcont, ang, legs,
-                    leg_lm, leg_size, inser, clean_base_path)
+                    leg_lm, leg_size, inser, clean_base_path, body_L_pts)
       }
     })
     # Write plots and dataframe
