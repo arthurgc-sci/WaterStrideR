@@ -90,33 +90,17 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
            scale_value=scale_value) %>% as.numeric) #pixel per unit
 }
 
-#' Accessory for redRulerScaler
-#'
-#' @param text A string of characters. The text in which to count leading zeros.
-#' @param zeros An integer. The number of leading zeros to check for in the `text`. Default is 1.
-#' @return The number of leading zeros in the string `text`.
-#' @keywords internal
-nZeros <- function(text, zeros=1){
-  if(substr(text, zeros, zeros) == 0){
-    return( nZeros(text = text,
-                   zeros = zeros+1) )
-  } else { return (zeros-1) }
-}
-
-#'Get scale using detection of red millimeter paper
-#'
-#' Detect ruler as biggest red label,
+#' Red ruler tiles centroids
+#'  
+#' From image with red ruler and no other big red object : returns dataframe of centroids of each
+#' tiles of the scale
 #' 
-#' @param img c.img or pixset. base image
+#' @param img c.img including a red ruler and no other red object bigger than it.
 #' @param red_thresh required difference in intensity between red component
 #' and other components to detect the red ruler
-#' @param confidence_interval a numerical value in range 0:1.
-#' confidence interval value to build the error margin from
-#' @param viz logical. visualization option
-#' @param msg logical. console message option
-#' @importFrom stats dist
-#' @export
-redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FALSE, msg=TRUE){
+#' @param viz a boolean. visualization option
+#' @param msg a boolean. Console output option
+redRulerTiles <- function(img, red_thresh=0.01, viz=FALSE, msg=TRUE){
   # Get ruler as the biggest set of red pixels from the image
   if(msg) message("--- scaling - Extracting ruler...")
   IR <- correct_illumination(imager::R(img)) #RGB components with linear correction of illumination
@@ -133,7 +117,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FA
   if(msg) message("--- scaling - Segmenting ruler's tiles...")
   ruler_crop <- imager::crop.bbox(ruler_img, ruler_img==TRUE) #cropped ruler
   ruler_neg <- ruler_crop %>% invert_grayscale #negative
-  seg_ruler <- gFastSeg(ruler_neg, px_range=c(1,100000000), viz=FALSE) #negative ruler segmentation
+  seg_ruler <- gFastSeg(ruler_neg, px_range=c(1,100000000), viz=viz) #negative ruler segmentation
   l_seg_r <- lapply(seg_ruler, nrow) %>% unlist #label's size
   median_threshold <- which(l_seg_r < 1.5 * median(l_seg_r) & l_seg_r > 0.5 * median(l_seg_r))
   seg_tiles <- seg_ruler[median_threshold] #removes label too big or too small
@@ -143,42 +127,72 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FA
   if(msg) message("--- scaling - Computing tile's centroid distances...")
   mean_px_val <- lapply(seg_tiles, colMeans) #vector of xy mean position of the ruler's tiles
   tile_pos <- as.data.frame(do.call(rbind, mean_px_val)) #dataframe with xy mean position of the ruler's tiles
-  n_tiles <- nrow(tile_pos) #number of tiles
-  pb <- progress::progress_bar$new(total = n_tiles-1)
-  distances <- tile_pos %>% dist %>% as.vector #all possible distances between every tiles centroids
   
-  # Get mean distance (pixels) between two adjacent tiles (mm)
-  if(msg) message("--- scaling - Computing scale...")
-  n_breaks <- 2*n_tiles+200 #adaptative breaks: less data <=> wider breaks
-  d_hist <- hist(distances, breaks = n_breaks, plot=FALSE) #inbetween tiles distances histogram
-  counts_spiked <- spikePlateau(d_hist$counts) #add 'spikes' because pracma::findpeaks does not detect flat peaks, which can frequently happen in histograms
-  h_peaks <- pracma::findpeaks(counts_spiked, threshold = 0.15 * max(counts_spiked)) #histogram peaks
-  h_thresh <- d_hist$mids[h_peaks[1:2, 2]] %>% mean #mean value between the first two peaks, used as threshold to select 1st peaks surrounding values
-  unit_dist <- distances[distances < h_thresh] / 1000
-  unit_dist_mean <- unit_dist %>% mean #mean pixel amount for 1 micron
-  se <- (unit_dist %>% sd)/(unit_dist %>% length %>% sqrt) #mean's Standard Error
-  e_margin <- se*qnorm(1-(1-confidence_interval)/2) #Error margin for a given confidence interval
-  
-  #visualization to check correct execution
+  if(msg) message(paste0("--- scaling - Found ", nrow(tile_pos), " tiles."))
   if(viz){
-    par(mfrow=c(1,2))
-    plot(tile_pos, pch=16, cex=0.5, asp=1) #tiles centroids
-    plot(d_hist, freq = TRUE, xlim = c(0, max(distances)/5)) #distance histogram
-    points(d_hist$mids[h_peaks[, 2]], h_peaks[, 1], col = "red", pch = 19, cex = 1.5) #plotted peaks
-    par(mfrow=c(1,1))
+    points(tile_pos, pch=16, col=0)
+    points(tile_pos, pch=10, col=1)
   }
   
-  #console print
-  if(msg){
-    exp_main <- unit_dist_mean %>% abs %>% log10 %>% floor
-    e_same_exp <- (e_margin * 10^(-exp_main+1) ) %>% as.character #e_same_exp
-    e_subp <- gsub("\\.", "", e_same_exp)
-    n_zeros <- nZeros(e_subp)
-    e_margin_format <- paste0("0.", substring(e_subp, 2, n_zeros+1), "e-0", abs(exp_main))
-    cat('1 \u00b5m =', format(unit_dist_mean , scientific=TRUE, digits=3), #unicode for characters
-        "\u00B1", e_margin_format,'px \n')
+  return(tile_pos)
+}
+
+#' 4 Nearest neighbor distance for set of points
+#'
+#' @param tiles_centroid tiles centroid as output of redRulerTiles()
+#' @param alpha confidence interval level
+#' @param viz a boolean. visualization option
+tilesUnitDist <- function(tiles_centroid, alpha=0.05, viz=FALSE){
+  knn_res <- FNN::get.knn(tiles_centroid, k = 4) #4 nearest neighbod using KD-tree
+  v4 <- as.vector(knn_res$nn.dist) #flatten
+  med <- stats::quantile(v4, 0.3) #median for a first average estimate of 1mm with low leverage
+  lo_f <- med * 0.5 #filter small outliers likely residues of segmentation error
+  hi_f <- med * 1.207 #med+(sqrt(med)-med)/2 = mean value between 1mm and 1mm square diagonal
+  v4f0 <- v4[v4 > lo_f & v4 < hi_f] 
+  v4f <- v4f0[!duplicated(v4f0)]  #remove duplicates
+  unit_dist_mean <- mean(v4f)
+  #confidence interval
+  n <- length(v4f)
+  if(n < 120) warning(paste0("Only ", n, " measurements were found; at least 120 are required to keep the scale error margin below 1%. Try adjusting 'f.red_thresh' in gPipeline(), increasing the scale size, or scaling manually."))
+  sem <- sd(v4f) / sqrt(n) #std error mean
+  ci_alpha <- abs(qnorm(alpha/2) * sem) #confidence interval
+  
+  if(viz){
+    h <- hist(v4, breaks = 50, plot = FALSE)
+    bar_cols <- ifelse(h$mids >= lo_f & h$mids <= hi_f, "#4CAF50", "#aaaaaa")
+    plot(h, col = bar_cols, border = NA, xlab = "Pixels",
+         main = "Distance to 4 nearest neighbors of each tile")
+    abline(v = c(lo_f, hi_f), col=2, lwd=1)
+    legend("topright", bty="n", pch=15, col=c("#4CAF50", "#aaaaaa"), legend=c("Kept", "Filtered"))
+    abline(v=unit_dist_mean, col="#235426", lwd=2)
   }
-  return(c("scale" = unit_dist_mean, "error" = e_margin))
+  
+  return(c("scale" = unit_dist_mean, "error" = ci_alpha))
+}
+
+#'Get scale using detection of red millimeter paper
+#'
+#' Detect ruler as biggest red label
+#' 
+#' @param img c.img or pixset. base image
+#' @param red_thresh required difference in intensity between red component
+#' and other components to detect the red ruler
+#' @param alpha_confidence a numerical value in range 0:1.
+#' alpha level for confidence interval
+#' @param viz logical. visualization option
+#' @param msg logical. console message option
+#' @export
+redRulerScale <- function(img, red_thresh=0.01, alpha_confidence=0.05, viz=FALSE, msg=TRUE){
+  tiles_centroid <- redRulerTiles(img, red_thresh=red_thresh, viz=viz, msg=msg)
+  sc <- tilesUnitDist(tiles_centroid, alpha=alpha_confidence, viz=viz)
+  scale_um <- sc["scale"]/1000
+  ic_um <- sc["error"]/1000
+  if(msg){
+    sc_txt <- format(scale_um , scientific=TRUE, digits=3) #px/micron
+    ic_txt <- format(ic_um , scientific=TRUE, digits=3)
+    cat('1 \u00b5m =', sc_txt, "\u00B1", ic_txt, "pixels")
+  }
+  return(c("scale" = scale_um, "error" = ic_um))
 }
 
 #' Scale method selecter for gPipeline
@@ -188,7 +202,7 @@ redRulerScale <- function(img, red_thresh=0.05, confidence_interval=0.95, viz=FA
 #' @param red_thresh required difference in intensity between red component
 #' @param viz visualization option of redRulerScale
 #' and other components to detect the red ruler
-pipelineScale <- function(img, auto_scale, red_thresh=0.05, viz=FALSE){
+pipelineScale <- function(img, auto_scale, red_thresh=0.01, viz=FALSE){
   if(auto_scale){
     scale <- redRulerScale(img, msg=FALSE, red_thresh=red_thresh, viz=viz) #get scale
   } else {

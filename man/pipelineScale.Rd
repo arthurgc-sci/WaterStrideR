@@ -4,7 +4,7 @@
 \alias{pipelineScale}
 \title{Scale method selecter for gPipeline}
 \usage{
-pipelineScale(img, auto_scale, red_thresh = 0.05, viz = FALSE)
+pipelineScale(img, auto_scale, red_thresh = 0.01, viz = FALSE)
 }
 \arguments{
 \item{img}{c.img or pixset}

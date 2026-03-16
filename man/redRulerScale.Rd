@@ -6,8 +6,8 @@
 \usage{
 redRulerScale(
   img,
-  red_thresh = 0.05,
-  confidence_interval = 0.95,
+  red_thresh = 0.01,
+  alpha_confidence = 0.05,
   viz = FALSE,
   msg = TRUE
 )
@@ -18,13 +18,13 @@ redRulerScale(
 \item{red_thresh}{required difference in intensity between red component
 and other components to detect the red ruler}
 
-\item{confidence_interval}{a numerical value in range 0:1.
-confidence interval value to build the error margin from}
+\item{alpha_confidence}{a numerical value in range 0:1.
+alpha level for confidence interval}
 
 \item{viz}{logical. visualization option}
 
 \item{msg}{logical. console message option}
 }
 \description{
-Detect ruler as biggest red label,
+Detect ruler as biggest red label
 }

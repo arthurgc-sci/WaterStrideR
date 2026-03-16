@@ -439,6 +439,7 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 #' @param n_splines an integer. Number of splines to fit leg contour angle variation
 #' @param search_w an integer. Distance (in number of points in contour) to use to compute leg contour angles
 #' 
+#' @importFrom stats dist
 #' @export
 gLegLandmarks <- function(leg_coords,
                           insertion,

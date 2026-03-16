@@ -68,7 +68,7 @@ gPipeline <- function(# INPUT
                       k.leglm_search_w = 6,
                       k.leglm_splines_df = 30,
                       # b. Filters
-                      f.red_thresh = 0.05,
+                      f.red_thresh = 0.01,
                       f.clean_small_spots = 25,
                       f.leg_lim_ratio = c(.25,.6),
                       f.leg_inser_thresh = .1,
@@ -179,6 +179,7 @@ gPipeline <- function(# INPUT
   df_out <- data.frame(image =  rep(clean_base_path, length(body_lab_points)),
                        i = seq_along(body_lab_points),
                        L_body = body_length %>% round,
+                       scale = scale[1],
                        error_margin = error_margin,
                        left_tibia = leg_res$right_tibia %>% round,#inverting left/right due to error
                        right_tibia = leg_res$left_tibia %>% round,
@@ -292,6 +293,11 @@ gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, s
 gMultiPipeline <- function(img_path_list, return_df, ...){
   img_path_length <- length(img_path_list)
   df_out_list <- list()
+  dots <- list(...) #as list to allow filtering of passed args
+  if(any(c("write_output","single_write","return_df") %in% ...names())){
+    message("Note: The arguments 'write_output', 'single_write', and 'return_df' passed via '...' were ignored. These are managed internally by gMultiPipeline.")
+    dots[c("write_output", "single_write", "return_df")] <- NULL
+  }
   message(paste0("Running pipeline for ", img_path_length, " images \n_____________________________"))
   #Run pipeline for each image
   for(img_path_i in 1:img_path_length){
@@ -300,11 +306,14 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
     message(paste0("\n  ",img_path_i,"/",img_path_length,
                    " - Processing image \"",clean_base_path,"\"\n  |"))
     tryCatch({
-      pipe_result <- gPipeline(img_path_list[img_path_i], #save output dataframe in list
-                               write_output=TRUE,
-                               return_df=TRUE, #return dataframe of each image analysis
-                               single_write=FALSE, #writing format for whole directory
-                               ...) #gPipeline arguments
+      pipe_result <- do.call(
+        gPipeline, c(list(
+            img_path = img_path_list[img_path_i],
+            write_output = TRUE,
+            return_df = TRUE,
+            single_write = FALSE
+          ), dots) #passed args
+      )
       if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
     }, error = function(e) { #gPipeline full crash handling, probably needs debugging
       warning(paste("gPipeline Failure on",clean_base_path,
@@ -316,7 +325,7 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
   dir_name <- dirname(img_path_list)[1] #single element for all the list
   main_dir <- basename(dir_name) #name to use for output directories = original directory
   df_out_path <- paste0(dir_name, "/out_", main_dir, "/data_", main_dir, ".csv") #output directory name
-  write.table(multi_df_out, file = df_out_path, row.names = FALSE, sep=";") 
+  write.table(multi_df_out, file = df_out_path, row.names = FALSE, sep=";")
   if(return_df){
     return(multi_df_out)
   }
@@ -342,7 +351,7 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
     if( !file.exists(img_path) ){
       message(paste0("File ",img_path," appears to be an image but was not found in ", getwd()))
     } else {
-      gPipeline(img_path, return_df=return_df, ...)
+      return(gPipeline(img_path, return_df=return_df, ...))
     }
   } else { #path is not an image, assuming a folder containing images
     if( !file.exists(img_path) ){ #invalid path
@@ -360,7 +369,7 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
           message("Running pipeline for the single image found in directory")
           return(gPipeline(lf, return_df=return_df, ...))
         } else { #if multiple images are found in dir
-          gMultiPipeline(lf, return_df=return_df, ...) 
+          return(gMultiPipeline(lf, return_df=return_df, ...))
         }
       }
     }

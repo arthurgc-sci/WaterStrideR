@@ -3,29 +3,38 @@ Title: Leg Measurement, Sex and Wing Prediction for Microvelia longipes
 Version: 0.6.2
 Authors@R: 
     person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre"))
-Description: Image analysis, statistical, logical tools and pipeline for leg measurement, sex and wing prediction of Microvelia longipes (Hemiptera, Gerroidea, Veliidae) from images including multiple individuals. Scaling is automatized if the image include a millimetric orange-red ruler.
+Description: Image analysis, statistical, logical tools and pipeline for
+    leg measurement, sex and wing prediction of Microvelia longipes
+    (Hemiptera, Gerroidea, Veliidae) from images including multiple
+    individuals. Scaling is automatized if the image include a millimetric
+    orange-red ruler.
 License: GPL (>= 3)
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Depends: 
-    R (>= 3.5)
-LazyData: true
 URL: https://github.com/arthurgc-sci/WaterStrideR
 BugReports: https://github.com/arthurgc-sci/WaterStrideR/issues
+Depends: 
+    R (>= 3.5)
 Imports:
     dplyr,
-    magrittr,
+    FNN,
+    graphics,
+    grDevices,
     imager,
+    magrittr,
+    MASS,
     mclust,
     Momocs,
-    pracma,
-    MASS,
     progress,
-    rootSolve
+    rootSolve,
+    stats,
+    utils
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: 
+    knitr
 Config/testthat/edition: 3
-VignetteBuilder: knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

@@ -20,7 +20,7 @@ gPipeline(
   k.body_dilation_ratio = 0.3,
   k.leglm_search_w = 6,
   k.leglm_splines_df = 30,
-  f.red_thresh = 0.05,
+  f.red_thresh = 0.01,
   f.clean_small_spots = 25,
   f.leg_lim_ratio = c(0.25, 0.6),
   f.leg_inser_thresh = 0.1,
