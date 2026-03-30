@@ -14,13 +14,14 @@ gPipeline(
   return_everything = FALSE,
   k.bin_thresh = 0.8,
   k.body_size_px_range = c(300, 1500),
-  k.clean_kernel = 3,
+  k.edge_kernel = 5,
+  k.clean_kernel = 1,
   k.crop_size_factor = 3.5,
   k.gmm_slope_value = -25,
-  k.body_dilation_ratio = 0.3,
+  k.body_dilation_ratio = 0.22,
   k.leglm_search_w = 6,
-  k.leglm_splines_df = 30,
-  f.red_thresh = 0.01,
+  k.leglm_splines_df = 35,
+  f.red_thresh = 0.02,
   f.clean_small_spots = 25,
   f.leg_lim_ratio = c(0.25, 0.6),
   f.leg_inser_thresh = 0.1,
@@ -50,7 +51,9 @@ for the initial binarization of the input image}
 
 \item{k.body_size_px_range}{numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand}
 
-\item{k.clean_kernel}{numerical. Kernel size for morphological opening and closing
+\item{k.edge_kernel}{numerical integer. Kernel size for body canny edge closing}
+
+\item{k.clean_kernel}{numerical integer. Kernel size for morphological opening and closing
 of body points to get a cleaner shape.}
 
 \item{k.crop_size_factor}{numerical. Individual's crop size relative to body length}

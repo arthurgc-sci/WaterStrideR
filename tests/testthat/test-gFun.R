@@ -9,9 +9,12 @@ test_that("Connected components segmentation works - gFastSeg", {
 #gCleanBin
 test_that("Small or edge-connex components removal from binary image", {
   sq3 <- readRDS(test_path("fixtures", "img_3square.rds"))
-  res <- gCleanBin(l_img_bin=sq3, centroid=c(6,6), px_filter = 9)
+  sq32 <- sq3
+  sq32[,,1,1] <- 0
+  res <- gCleanBin(l_img_bin=sq3, l_body_bin=sq32, centroid=c(6,6), px_filter = 9)
   expect_equal(nrow(res),9)
 })
+
 
 #dilBodies
 test_that("Size based body image dilation", {

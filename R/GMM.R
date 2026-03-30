@@ -2,12 +2,14 @@
 
 #' Binarize gerris using GMM derivative
 #'
-#' Binarize gerris by setting a fixed threshold per input image using GMM derivative
+#' Binarize gerris by setting a fixed threshold per input image using GMM
+#' derivative
 #'
 #' @param gerris_crops c.img or list of c.img of cropped binary individuals
 #' @param nG number of gaussians to fit in GMM
 #' @param noise_n normal noise to add to histogram data, helps breaking plateaus
-#' @param y_root Numeric. Y-value at which the derivative of the fitted Gaussian Mixture Model (GMM) is evaluated to find threshold roots.
+#' @param y_root Numeric. Y-value at which the derivative of the fitted Gaussian
+#'   Mixture Model (GMM) is evaluated to find threshold roots.
 #' @param msg logical for display of diagnostic messages
 #' @export
 gGMMThresh <- function(gerris_crops, nG=2, noise_n=0.005, y_root=-25, msg=TRUE){
@@ -27,22 +29,23 @@ gGMMThresh <- function(gerris_crops, nG=2, noise_n=0.005, y_root=-25, msg=TRUE){
   thresh <- GMMdRoots(l_GMM$df, y = y_root, msg = FALSE) #find roots of the GMM for y= -25 (a fixed slope)
   if(length(thresh) == 0) return(NA)
   binarized_gerris <- gerris_crops > max(thresh) #binarize using maximum solution of f'(x)
-  return( binarized_gerris )
+  return( imager::as.cimg(binarized_gerris) )
 }
 
 #' GMM 'V' using Mclust
 #'
-#' returns the GMM model of a distribution as a numeric vector img_val and a dataframe of the parameters with possibility
-#' of removing the one with the highest mean. n integer vector of components to test
-#' if n length > 1 : the number of components will be decided using BIC
+#' returns the GMM model of a distribution as a numeric vector img_val and a
+#' dataframe of the parameters with possibility of removing the one with the
+#' highest mean. n integer vector of components to test if n length > 1 : the
+#' number of components will be decided using BIC
 #'
 #' @param img_val numerical gray values of an image
 #' @param n numerical integer in range 1:9. number 'G' of components of the GMM
 #' @param keep_max logical. to remove rightmost component and consequently
-#' adjust weights
+#'   adjust weights
 #' @param viz visualization option
-#' @param n_noise_sd numerical. standard deviation of normal noise to add
-#' to the data to help breaking plateaus in he data, not compatible with findPeaks() 
+#' @param n_noise_sd numerical. standard deviation of normal noise to add to the
+#'   data to help breaking plateaus in he data, not compatible with findPeaks()
 #' @export
 GMM <- function(img_val, n=1:9, keep_max=TRUE, viz=FALSE, n_noise_sd=0){
   if(imager::is.cimg(img_val)){
@@ -98,7 +101,7 @@ GMMquant <- function(gmm_model_df, q, viz=FALSE){
         dnorm(x, mean=df["mu"], sd=df["sd"]) * df["w"]
       }) %>% sum
     }
-    y_vals <- sapply(x_vals , f2)
+    y_vals <- vapply(x_vals, f2, numeric(1))
     lim <- c(0,1)
     if(q<0.99 & q>0.01){   #adjust scale for non extreme quantile values
       lim <- c(uniroot(function(x) f(x)+q-0.01, c(0,1))[1] %>% unlist,
@@ -113,7 +116,8 @@ GMMquant <- function(gmm_model_df, q, viz=FALSE){
 
 #' Roots of the derivative of a GMM
 #'
-#' Give roots of y for the derivative of given GMM parameters as dataframe created with GMM function
+#' Give roots of y for the derivative of given GMM parameters as dataframe
+#' created with GMM function
 #'
 #' @param GMM_df dataframe ($df) output of GMM()
 #' @param y numerical value to find the roots of
@@ -125,13 +129,15 @@ GMMdRoots <- function(GMM_df, y, viz=FALSE, msg=TRUE){
   if(!is.data.frame(GMM_df)) stop("GMM_df must be a dataframe")
   if(any(colnames(GMM_df) != c("mu","sd","w"))) stop("GMM_df must be a dataframe created with GMM")
   #FX
-  roots <- rootSolve::uniroot.all(function(x) f_prime(x, GMM_df)-y , interval = c(0, 1), tol=10e-8) #solve with rootSolve package
+  roots <- rootSolve::uniroot.all(function(x) f_prime(x, GMM_df)-y,
+                                  interval = c(0, 1), tol=10e-8) #solve with rootSolve package
   if(viz){
     roots_plot <- c(rootSolve::uniroot.all(function(x) f_prime(x, GMM_df)-5,
                                            interval = c(0, 1), tol=10e-8), #auto adjust plot limits
                     rootSolve::uniroot.all(function(x) f_prime(x, GMM_df)+5,
                                            interval = c(0, 1), tol=10e-8))
-    plot(function(x) f_prime(x,GMM_df), xlim=c(min(roots_plot)-0.05, max(roots_plot)+0.05), #plot fx
+    plot(function(x) f_prime(x,GMM_df), xlim=c(min(roots_plot)-0.05,
+                                               max(roots_plot)+0.05), #plot fx
          main = paste0("GMM derivative, y = ",y), ylab = "y", xlab = "x")
     points(x=roots, y=rep(y, length(roots)), col=2, pch=16) #plot found points
     abline(h=y,col=2)
@@ -147,12 +153,12 @@ GMMdRoots <- function(GMM_df, y, viz=FALSE, msg=TRUE){
 #' @param GMM_df dataframe ($df) output of GMM()
 #' @keywords internal
 f_prime <- function(x, GMM_df){
-  sapply(x, function(xi){ # !!! VECTORIZATION !!!
+  vapply(x, function(xi){ # !!! VECTORIZATION !!!
     apply(GMM_df, 1, function(df){
       mu <- df["mu"]
       sd <- df["sd"]
       w <- df["w"]
       -((xi - mu) / sd^2) * dnorm(xi, mean = mu, sd = sd) * w
     }) %>% sum
-  })
+  }, numeric(1))
 }

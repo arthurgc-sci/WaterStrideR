@@ -15,13 +15,14 @@ loadModel <- function(model_name) {
   return(model)
 }
 
-#' Body contour and orientation 
+#' Body contour and orientation
 #'
-#' Orient body contours extracted from image using provided angles then define consistent
-#' contour starting point as leftmost point
+#' Orient body contours extracted from image using provided angles then define
+#' consistent contour starting point as leftmost point
 #'
 #' @param img_bin c.img or list of c.img of waterstrider body image(s)
-#' @param ori_angle angle, vector of angles or list of angles of the segmented bodies
+#' @param ori_angle angle, vector of angles or list of angles of the segmented
+#'   bodies
 #' @export
 normBody <- function(img_bin, ori_angle){
   if(is.list(img_bin) | length(ori_angle)>1){ #VECTORIZATION
@@ -52,18 +53,21 @@ normBody <- function(img_bin, ori_angle){
   ang_mat <- matrix(c(cos_a, sin_a, -sin_a, cos_a), ncol = 2)
   rot_cont <- body_cont_mat %*% ang_mat # Rotate
   start_idx <- which.min(rot_cont[, 1]) # Consistent starting point
-  aligned_cont <- rbind(rot_cont[start_idx:nrow(rot_cont), ], rot_cont[1:(start_idx - 1), ])   # Start from leftmost point (minimum X) to normalize contour insertion thus avoid 180° random rotations
+  aligned_cont <- rbind(rot_cont[start_idx:nrow(rot_cont), ],
+                        rot_cont[1:(start_idx - 1), ])   # Start from leftmost point (minimum X) to normalize contour insertion thus avoid 180° random rotations
   
   return(aligned_cont)
 }
 
 #' Momocs EFA from waterstrider body image
 #'
-#' @param ori_cont contour or list of contours (as 2D numeric dataframe of matrix) of waterstrider body image(s)
+#' @param ori_cont contour or list of contours (as 2D numeric dataframe of
+#'   matrix) of waterstrider body image(s)
 #' @param nb_h number of harmonics to compute
 #' @param viz logical for plot of alignment, fourier space and PCA
 #' @param resamp number of points to resample on each contour
-#' @importFrom Momocs coo_scale coo_center coo_interpolate efourier panel calibrate_harmonicpower_efourier PCA plot_PCA
+#' @importFrom Momocs coo_scale coo_center coo_interpolate efourier panel
+#'   calibrate_harmonicpower_efourier PCA plot_PCA
 #' @export
 scoresEFA <- function(ori_cont, nb_h=7, viz=FALSE, resamp=100){
   if(!is.list(ori_cont)){
@@ -102,11 +106,12 @@ scoresEFA <- function(ori_cont, nb_h=7, viz=FALSE, resamp=100){
 
 #' Prediction pipeline for sex or wings
 #'
-#' Wrapper for gBodyPredict1, allowing for format control and vectorization
-#' From segmented body binary images: contour, orientation, resampling, 
-#' 
+#' Wrapper for gBodyPredict1, allowing for format control and vectorization From
+#' segmented body binary images: contour, orientation, resampling,
+#'
 #' @param img_data c.img or list of c.img of segmented bodies
-#' @param angle angle, vector of angles or list of angles of the segmented bodies
+#' @param angle angle, vector of angles or list of angles of the segmented
+#'   bodies
 #' @param what "sex" or "wing". Data to be predicted.
 #' @export
 gBodyPredict <- function(img_data, angle, what){
@@ -126,8 +131,8 @@ gBodyPredict <- function(img_data, angle, what){
     ang_len <- length(angle)
     if(ang_len == length(img_data)){ #angle has more than 1 element
       if(ang_len == length(img_data)){ #matching length
-        valid <- !( sapply(angle, function(x) all(is.na(x))) |
-                    sapply(img_data, function(x) all(is.na(x))) ) #non na points, boolean
+        valid <- !( vapply(angle, function(x) all(is.na(x)), logical(1)) |
+                    vapply(img_data, function(x) all(is.na(x)), logical(1)) ) #non na points, boolean
         if(sum(valid) >= 1){ #at least 1 valid point
           res <- vector(mode="list", length=ang_len)
           valid_res <- mapply(function(img, ang){ #make predictions
@@ -142,9 +147,11 @@ gBodyPredict <- function(img_data, angle, what){
             x=rep(NA,ang_len)
           )
           colnames(res$posterior) <- colnames(valid_res[[1]]$posterior)
-          res$class[valid] <- sapply(valid_res, \(x) x$class)
-          res$posterior[valid, ] <- do.call(rbind, lapply(valid_res, \(x) x$posterior))
-          res$x[valid] <- sapply(valid_res, \(i) i$x)
+          res$class[valid] <- lapply(valid_res,\(x) x$class) %>% unlist
+          res$posterior[valid, ] <- do.call(rbind,
+                                            lapply(valid_res,
+                                                   \(x) x$posterior))
+          res$x[valid] <- vapply(valid_res, \(i) i$x, numeric(1))
           
         } else {
           stop("no valid (non-NA) img-angle pair")
@@ -162,11 +169,12 @@ gBodyPredict <- function(img_data, angle, what){
   return(res)
 }
 
-#' Prediction pipeline for sex or wings - single image, to be used in gBodyPredict
+#' Prediction pipeline for sex or wings - single image, to be used in
+#' gBodyPredict
 #'
 #' @param img a c.img object. Segmented binary waterstrider body image.
 #' @param ang a number. Orientation angle of that individual.
-#' @param rs an integer. 
+#' @param rs an integer.
 #' @param pca a prcomp object.
 #' @param lda a MASS lda object.
 #' @import MASS

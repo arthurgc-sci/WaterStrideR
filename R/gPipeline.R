@@ -6,47 +6,60 @@
 #' Finds individual's size, sex, presence of wing, tibia and femur length
 #'
 #' @param img_path image path
-#' @param write_output logical, to save metrics as csv and print image analysis diagnostic plots
+#' @param write_output logical, to save metrics as csv and print image analysis
+#'   diagnostic plots
 #' @param return_df logical, to return metrics in R
 #' @param single_write logical, writing method for gWritePipeline()
 #' @param auto_scale a boolean. If 'TRUE' : red ruler based scale
 #' @param predict_sex_wing a boolean. To predict sex and presence of wings
 #' @param k.bin_thresh numerical in \code{[0, 1]}. Global gray-value threshold
-#' for the initial binarization of the input image
-#' @param k.clean_kernel numerical. Kernel size for morphological opening and closing 
-#' of body points to get a cleaner shape.
-#' @param k.crop_size_factor numerical. Individual's crop size relative to body length
+#'   for the initial binarization of the input image
+#' @param k.edge_kernel numerical integer. Kernel size for body canny edge
+#'   closing
+#' @param k.clean_kernel numerical integer. Kernel size for morphological
+#'   opening and closing of body points to get a cleaner shape.
+#' @param k.crop_size_factor numerical. Individual's crop size relative to body
+#'   length
 #' @param k.gmm_slope_value numerical. y-value of individual's plot model
-#' (derivative of GMM used to fit gray values) to use to define threshold between individual's
-#' gray values and those of the background.
-#' @param k.body_dilation_ratio numerical in \code{[0, 1]}. Dilation kernel size as body length ratio for creation
-#' of dilated body.
-#' @param k.leglm_search_w numerical. Distance (in number of points in contour) to use to compute leg contour angles
-#' @param k.leglm_splines_df numerical. Number of splines to fit leg contour angle variation
-#' @param k.body_size_px_range numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand
-#' @param f.red_thresh numerical in \code{[0, 1]}. Difference in intensity between red component
-#' and other components to detect the red ruler. Only relevant if auto_scale == TRUE
-#' @param f.clean_small_spots numerical. Minimal size (in number of pixels) allowed for a patch
-#' of with pixels (label) found after individual thresholding.
-#' @param f.leg_lim_ratio numerical vector of length 2. Values between 0 and 1 to define range where
-#' legs insertions are expected to be found on the dilated body contour as ratio of body elongation
-#' starting from the back (thus excluding head appendages and hind body part)
-#' @param f.leg_inser_thresh numerical in \code{[0, 1]}. As ratio of leg half contour length.
-#' Threshold to remove angular points too close to the leg insertion point when starting to look for
-#' knee points in leg landmarks.
-#' @param f.leg_inser_knee_thresh numerical in \code{[0, 1]}. Threshold for knee-insertion points dissimilarity
-#' Tolerated ratio between the distances from the insertion point to each detected knee
-#' A value close to 0 will ensure knee-insertion distances are similar
-#' @param f.leg_ankle_knee_thresh numerical in \code{[0, 1]}. Threshold for knee-ankle points dissimilarity
-#' As ratio of leg half contour length. When detecting ankles point using knee points, threshold
-#' to detect if the difference between the two knee-ankle distances is realistically acceptable 
-#' @param f.leg_n_inflexions numerical vector of length 2. Tolerated range of inflexion points
-#' on leg contour. Usually 1 or 2 for extreme ends of the limb, and 2 per expected joint in the
-#' middle of it.
+#'   (derivative of GMM used to fit gray values) to use to define threshold
+#'   between individual's gray values and those of the background.
+#' @param k.body_dilation_ratio numerical in \code{[0, 1]}. Dilation kernel size
+#'   as body length ratio for creation of dilated body.
+#' @param k.leglm_search_w numerical. Distance (in number of points in contour)
+#'   to use to compute leg contour angles
+#' @param k.leglm_splines_df numerical. Number of splines to fit leg contour
+#'   angle variation
+#' @param k.body_size_px_range numerical vector of length 2. range in pixels of
+#'   expected body size. Check imager::label(image_binary) with boxplots
+#'   beforehand
+#' @param f.red_thresh numerical in \code{[0, 1]}. Difference in intensity
+#'   between red component and other components to detect the red ruler. Only
+#'   relevant if auto_scale == TRUE
+#' @param f.clean_small_spots numerical. Minimal size (in number of pixels)
+#'   allowed for a patch of with pixels (label) found after individual
+#'   thresholding.
+#' @param f.leg_lim_ratio numerical vector of length 2. Values between 0 and 1
+#'   to define range where legs insertions are expected to be found on the
+#'   dilated body contour as ratio of body elongation starting from the back
+#'   (thus excluding head appendages and hind body part)
+#' @param f.leg_inser_thresh numerical in \code{[0, 1]}. As ratio of leg half
+#'   contour length. Threshold to remove angular points too close to the leg
+#'   insertion point when starting to look for knee points in leg landmarks.
+#' @param f.leg_inser_knee_thresh numerical in \code{[0, 1]}. Threshold for
+#'   knee-insertion points dissimilarity Tolerated ratio between the distances
+#'   from the insertion point to each detected knee A value close to 0 will
+#'   ensure knee-insertion distances are similar
+#' @param f.leg_ankle_knee_thresh numerical in \code{[0, 1]}. Threshold for
+#'   knee-ankle points dissimilarity As ratio of leg half contour length. When
+#'   detecting ankles point using knee points, threshold to detect if the
+#'   difference between the two knee-ankle distances is realistically acceptable
+#' @param f.leg_n_inflexions numerical vector of length 2. Tolerated range of
+#'   inflexion points on leg contour. Usually 1 or 2 for extreme ends of the
+#'   limb, and 2 per expected joint in the middle of it.
 #' @param f.segment_lengths_range numerical vector of length 2 n \code{[0, 1]}.
-#' Range of tolerated leg segments sizes relative to leg half contour length.
+#'   Range of tolerated leg segments sizes relative to leg half contour length.
 #' @param return_everything boolean. to return key process step data in R.
-#' 
+#'
 #' @export
 gPipeline <- function(# INPUT
                       img_path,
@@ -61,14 +74,15 @@ gPipeline <- function(# INPUT
                       # a. Key variables
                       k.bin_thresh = 0.8, #body
                       k.body_size_px_range = c(300,1500),
-                      k.clean_kernel = 3,
+                      k.edge_kernel = 5,
+                      k.clean_kernel = 1,
                       k.crop_size_factor = 3.5,
                       k.gmm_slope_value = -25,
-                      k.body_dilation_ratio = 0.3,
+                      k.body_dilation_ratio = 0.22,
                       k.leglm_search_w = 6,
-                      k.leglm_splines_df = 30,
+                      k.leglm_splines_df = 35,
                       # b. Filters
-                      f.red_thresh = 0.01,
+                      f.red_thresh = 0.02,
                       f.clean_small_spots = 25,
                       f.leg_lim_ratio = c(.25,.6),
                       f.leg_inser_thresh = .1,
@@ -80,50 +94,55 @@ gPipeline <- function(# INPUT
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
-  img_bin <- binaryLoad(img_path,
+  img_bin <- grayThresh(base_img,
                         threshold = k.bin_thresh) #load and binarize image
-  #Segmenting image
-  body_lab_points <- gFastSeg(img_bin, px_range=k.body_size_px_range, viz=FALSE) #segmentation
-  body_centroids <- lapply(body_lab_points, function(i) apply(i, 2, mean)) #body centroids
-    
   message("| \n2 - Computing scale")
   #Scale
   scale <- pipelineScale(base_img, auto_scale,
                          red_thresh = f.red_thresh) #get scale
   message("| \n3 - Computing body")
-  #Clean bodies
-  clean_body_points <- cleanBodyShape(body_lab_points,
-                                      kernel_size = k.clean_kernel)
+  #Rough body segmentation
+  body_lab_points <- gFastSeg(img_bin, px_range = k.body_size_px_range,
+                              viz = FALSE) #segmentation
+  body_centroids <- lapply(body_lab_points, function(i) apply(i, 2, mean)) #body centroids
+  rough_body_size <- vapply(body_lab_points, bodyLengthPC, numeric(1)) #fast body size using PC elongation
+  #Crop around body
+  b_crop <- gCrop(base_img, body_centroids, rough_body_size, viz = FALSE,
+                factor = k.crop_size_factor)
+  #Get precise body
+  b_cen <- b_crop$centroid #centroids in local reference frame
+  body_img0 <- gBody(img = b_crop$img, centroid = b_cen,
+                     k_size = 2, a = 1, s = 1,
+                    viz = FALSE, msg = FALSE)
+  ok_body <- !is.na(body_img0) #index in base body detection
+  body_img <- body_img0[ok_body] #filter
+  cen <- b_cen[ok_body]
+  b_crop <- lapply(b_crop, function(x) x[ok_body])
+  clean_body <- cleanBodyShape(body_img,
+                               kernel_size = k.clean_kernel)
   #Body length
-  bl_output <- bodyLength(clean_body_points, return_ext=TRUE)
+  bl_output <- bodyLength(imgAsCoords(clean_body), return_ext=TRUE) #clean bodylength
   body_length_pix <- bl_output$len
-  body_length <- body_length_pix/scale[1] #conversion in mm
+  body_length_cor <- (body_length_pix-1.662)/0.961 #SMA regression bias correction
+  body_length <- body_length_pix/scale[1] #conversion in microns
   if(auto_scale){
     error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
   } else error_margin <- NA
-  #Remove bodies
-  im_nobodies <- gNobody(base_img = base_img, body_lab_points = clean_body_points, viz=FALSE)
-  #Size based ind crop
-  l_crop <- gCrop(im_nobodies, body_centroids, body_length_pix, viz = FALSE,
-                  factor = k.crop_size_factor)
+
   #Fit GMM to image values
   message("| \n4 - Individual thresholding")
-  #***Formats
-  body_l_crops <- recropBodies(body_coords = clean_body_points, #Body to cropfull reference
-                               base_img = base_img,
-                               crop_coords = l_crop$crop_coords)
-  body <- body_l_crops %>% imgAsCoords #body as coordinates, same reference as dilcont
-  cen <- lapply(body, function(x){ apply(x,2,mean) }) #new centroids
+  #remove body and crop
+  im_nobodies <- gSubBody(base_body = b_crop$img, seg_body = clean_body) #Remove bodies
   #GMM threshold
-  l_cropbin <- gGMMThresh(l_crop$img, msg=FALSE,
+  l_cropbin <- gGMMThresh(im_nobodies, msg=FALSE,
                           y_root = k.gmm_slope_value)
   #Clean data
-  full <- gCleanBin(l_cropbin, cen, as_coords=FALSE,
+  full <- gCleanBin(l_cropbin, clean_body, cen, as_coords=FALSE,
                     px_filter = f.clean_small_spots)
   
   message("| \n5 - Orienting individuals")
   #1 - Dilate body contour on same coords as leg crops
-  dilbody <- dilBodies(body_img = body_l_crops,
+  dilbody <- dilBodies(body_img = body_img,
                        body_length = body_length_pix, #contour of the dilation as the intersection line
                        dilation_ratio = k.body_dilation_ratio)
   #2 - Dilated body contour as coords
@@ -134,11 +153,13 @@ gPipeline <- function(# INPUT
   inter_coords <- lapply(inter, function(x) x$coords)
   inter_idx <- lapply(inter, function(x) x$index)
   #4 - Orientation (PCA+intersection|density)
+  body <- imgAsCoords(body_img) #body points in local reference frame
   ang <- gOrientation(body, inter_coords)
   
   message("| \n6 - Leg segmentation")
   #5 - Hind legs insertions
-  inser <- gLegInsertion(ori_angle=ang, dil_contour=dilcont, inter_index=inter_idx,
+  inser <- gLegInsertion(ori_angle=ang, dil_contour=dilcont,
+                         inter_index=inter_idx,
                          leg_lim_ratio = f.leg_lim_ratio)
   #6 - Hind legs segmentation
   legs <- gLegSeg(gerris = full,
@@ -147,15 +168,16 @@ gPipeline <- function(# INPUT
                   insertions = inser)
   message("| \n7 - Leg landmarking & measurement")
   #7 - Get Points of interest from leg
-  leg_lm0 <- gLegLandmarksLoop(leg_coords = legs, insertion = inser, viz=FALSE, msg=FALSE,
-                           search_w = k.leglm_search_w,
-                           n_splines = k.leglm_splines_df,
-                           inser_thresh = f.leg_inser_thresh,
-                           knee_diff_thresh = f.leg_inser_knee_thresh,
-                           tresh_ankle = f.leg_ankle_knee_thresh,
-                           inflexion_pts_range = f.leg_n_inflexions,
-                           segment_length_range = f.segment_lengths_range
-                           )
+  leg_lm0 <- gLegLandmarksLoop(leg_coords = legs, insertion = inser,
+                               viz=FALSE, msg=FALSE,
+                              search_w = k.leglm_search_w,
+                              n_splines = k.leglm_splines_df,
+                              inser_thresh = f.leg_inser_thresh,
+                              knee_diff_thresh = f.leg_inser_knee_thresh,
+                              tresh_ankle = f.leg_ankle_knee_thresh,
+                              inflexion_pts_range = f.leg_n_inflexions,
+                              segment_length_range = f.segment_lengths_range
+                              )
   #8 - Correct insertion landmark by connection leg to body
   leg_lm <- gConnectLeg(body, leg_lm0)
   #9 - Distances
@@ -165,19 +187,22 @@ gPipeline <- function(# INPUT
   if(predict_sex_wing){
     message("| \n8 - Sex and wing prediction")
     #prediction pipelines: body img > contour > EFA > PCA > LDA, using models from package
-    sex_prediction <- gBodyPredict(img_data = body_l_crops, #NA handling built-in
+    sex_prediction <- gBodyPredict(img_data = body_img, #NA handling built-in
                                    angle = ang,
                                    what = "sex")
-    wing_prediction <- gBodyPredict(img_data = body_l_crops,
+    wing_prediction <- gBodyPredict(img_data = body_img,
                                     angle = ang,
                                     what = "wing")
     }
   
   #OUTPUTS
-  clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "", basename(img_path), ignore.case = TRUE)
+  clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
+                         basename(img_path), ignore.case = TRUE)
   leg_res <- gSplitLegMeasures(leg_size)
-  df_out <- data.frame(image =  rep(clean_base_path, length(body_lab_points)),
-                       i = seq_along(body_lab_points),
+  df_out <- data.frame(image =  rep(clean_base_path, sum(ok_body)),
+                       i = seq_along(body_lab_points[ok_body]),
+                       i_detec = which(ok_body), #TODO REMOVE JUST FOR TESTS
+                       body_length_pix = body_length_pix, #TODO REMOVE JUST FOR TESTS
                        L_body = body_length %>% round,
                        scale = scale[1],
                        error_margin = error_margin,
@@ -200,21 +225,24 @@ gPipeline <- function(# INPUT
   
   if(write_output){
     # Detection plot of the image
-    x_cen <- sapply(body_centroids, function(x) x[1])
-    y_cen <- sapply(body_centroids, function(x) x[2])
+    x_cen <- vapply(body_centroids[ok_body], function(x) x[1], numeric(1))
+    y_cen <- vapply(body_centroids[ok_body], function(x) x[2], numeric(1))
     detection_plot <- function(){ #save arguments to be called later
-      gDetectionPlot(base_img=base_img, scale=scale, x=x_cen, y=y_cen, auto_scale=auto_scale)
+      gDetectionPlot(base_img=base_img, scale=scale, x=x_cen, y=y_cen,
+                     auto_scale=auto_scale)
     }
     # Individuals metrics plot
     body_L_pts <- bl_output$body_L_pts
-    i_plots <- lapply(seq_along(body_l_crops), function(i) {
+    i_plots <- lapply(seq_along(body_lab_points[ok_body]), function(i) {
       function(){ #save arguments to be called later
         gGerrisPlot(i, full, body, cen, dilcont, ang, legs,
-                    leg_lm, leg_size, inser, clean_base_path, body_L_pts, body_length)
+                    leg_lm, leg_size, inser, clean_base_path,
+                    body_L_pts, body_length)
       }
     })
     # Write plots and dataframe
-    gWritePipeline(img_path, i_plots, detection_plot, df_out, dim_img=dim(base_img), single_write)
+    gWritePipeline(img_path, i_plots, detection_plot, df_out,
+                   dim_img=dim(base_img), single_write)
   }
   
   output <- list()
@@ -222,29 +250,36 @@ gPipeline <- function(# INPUT
     output[["df"]] <- df_out
   }
   if(return_everything){ #return mid-pipeline data (for model training or diagnostics for example)
-    output[["process_data"]] <- list(body_img = body_l_crops, angle = ang, legs = legs,
+    output[["process_data"]] <- list(body_img = clean_body,
+                                     angle = ang, legs = legs,
                                      dilcont = dilcont, inter_idx = inter_idx,
-                                     body_centroids = body_centroids, scale = scale, full = full,
-                                     inser = inser, crop_base = l_crop)
+                                     body_centroids = body_centroids[ok_body],
+                                     scale = scale, full = full,
+                                     inser = inser, crop_base = b_crop,
+                                     detec_cen = b_cen, detec_filt = ok_body)
   }
   return(output)
 }
 
 #' Write waterstriders pipeline outputs in local directory
-#' 
-#' Plot and dataframe Writing function for gPipeline, an alternative printing method is
-#' implemented for gMultiPipeline by passing single_write=False
-#' 
-#' @param img_path valid path to processed image, used to define writing directory 
-#' @param i_plots list of plots of individuals as created by gPipeline with write_output=T 
-#' @param detection_plot whole image detection plot as created by gPipeline with write_output=T 
+#'
+#' Plot and dataframe Writing function for gPipeline, an alternative printing
+#' method is implemented for gMultiPipeline by passing single_write=False
+#'
+#' @param img_path valid path to processed image, used to define writing
+#'   directory
+#' @param i_plots list of plots of individuals as created by gPipeline with
+#'   write_output=T
+#' @param detection_plot whole image detection plot as created by gPipeline with
+#'   write_output=T
 #' @param df_out corresponding dataframe created by gPipeline
 #' @param dim_img dimensions of base image
-#' @param single_write writing method
-#'  True : a directory is created for the current image, containing plots and dataframe
-#'  False : a single 'out' directory with all plots is created for the current directory
-#'  ,gMultiPipeline is supposed to take in charge the creation of the dataframe
-gWritePipeline <- function(img_path, i_plots, detection_plot, df_out, dim_img, single_write=TRUE){
+#' @param single_write writing method True : a directory is created for the
+#'   current image, containing plots and dataframe False : a single 'out'
+#'   directory with all plots is created for the current directory
+#'   ,gMultiPipeline is supposed to take in charge the creation of the dataframe
+gWritePipeline <- function(img_path, i_plots, detection_plot,
+                           df_out, dim_img, single_write=TRUE){
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
                          basename(img_path), ignore.case = TRUE)
   if(single_write){
@@ -333,13 +368,13 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
 
 #' Main method to run gPipeline for one or multiple images in the same directory
 #'
-#' Checks if an input can be valid for either gPipline or gMultiPipeline,
-#' and use the appropriate function, or return a specific error message
+#' Checks if an input can be valid for either gPipline or gMultiPipeline, and
+#' use the appropriate function, or return a specific error message
 #'
-#' @param img_path image path or vector of image paths to analyze 
+#' @param img_path image path or vector of image paths to analyze
 #' @param return_df logical to return the output dataframe
 #' @param ... Additional arguments passed to `gPipeline()`
-#' 
+#'
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
@@ -349,7 +384,8 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
   if( grepl(img_pattern, img_path, ignore.case = TRUE) ){ #if provided path is a single img path
     if( !file.exists(img_path) ){
-      message(paste0("File ",img_path," appears to be an image but was not found in ", getwd()))
+      message(paste0("File ",img_path,
+                     " appears to be an image but was not found in ", getwd()))
     } else {
       return(gPipeline(img_path, return_df=return_df, ...))
     }
@@ -364,7 +400,8 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
                          ignore.case=TRUE, full.names=TRUE) #img paths of the dir
         llf <- length(lf)
         if(llf==0){
-          message(paste0(img_path, " is a valid directory but does not contain any image"))
+          message(paste(img_path,
+                         "is a valid directory but does not contain any image"))
         } else if(llf==1){
           message("Running pipeline for the single image found in directory")
           return(gPipeline(lf, return_df=return_df, ...))

@@ -45,15 +45,6 @@ test_that("Images can be converted to points for measurements",{
   expect_equal(bodyLength(pts_bod, return_ext=TRUE)[["len"]] %>% round(.,1), 136.8)
 })
 
-#cleanBodyShape
-test_that("Body shape filter with different output type",{
-  pts_bod <- readRDS(test_path("fixtures", "pts_body.rds"))
-  cbs1 <- cleanBodyShape(pts_bod, kernel_size=10, as_coords = TRUE)[[1]]
-  cbs2 <- cleanBodyShape(pts_bod, kernel_size=10, as_coords = FALSE)[[1]]
-  expect_equal(nrow(cbs1), sum(cbs2==1))
-  expect_equal(nrow(cbs1), 5152)
-})
-
 #overlapPoints
 test_that("overlapPoints flexibility",{
   set_a1 <- c(1,1)

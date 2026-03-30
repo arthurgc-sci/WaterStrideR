@@ -2,13 +2,14 @@
 
 #' Open a Graphics Device Depending on OS
 #'
-#' Opens an interactive graphics device suitable for the current operating system.
+#' Opens an interactive graphics device suitable for the current operating
+#' system.
 #' - On **macOS**, uses `quartz()`
 #' - On **Linux** and **Windows**, uses `X11()`
 #'
 #' @param title a string. Graphic window's name
-#' @return
-#' `TRUE` if the graphics device was successfully opened, `FALSE` otherwise.
+#' @return `TRUE` if the graphics device was successfully opened, `FALSE`
+#' otherwise.
 #'
 #' @examples
 #' \dontrun{
@@ -36,10 +37,10 @@ openGrDevice <- function(title = "R Graphics Window"){
 }
 
 #' Manual scaling of an image
-#' 
+#'
 #' Scale imager image or pixset by setting scale value for a distance between
 #' two pixels set manually on image
-#' 
+#'
 #' @param img a c.img or pixset
 #' @param scale_value scale value. If NA: value will be asked in console
 #' @param plot_col string or numerical for plot color
@@ -91,16 +92,17 @@ getScale <- function(img, scale_value = NA, plot_col="#ff9100",
 }
 
 #' Red ruler tiles centroids
-#'  
-#' From image with red ruler and no other big red object : returns dataframe of centroids of each
-#' tiles of the scale
-#' 
-#' @param img c.img including a red ruler and no other red object bigger than it.
-#' @param red_thresh required difference in intensity between red component
-#' and other components to detect the red ruler
+#'
+#' From image with red ruler and no other big red object : returns dataframe of
+#' centroids of each tiles of the scale
+#'
+#' @param img c.img including a red ruler and no other red object bigger than
+#'   it.
+#' @param red_thresh required difference in intensity between red component and
+#'   other components to detect the red ruler
 #' @param viz a boolean. visualization option
 #' @param msg a boolean. Console output option
-redRulerTiles <- function(img, red_thresh=0.01, viz=FALSE, msg=TRUE){
+redRulerTiles <- function(img, red_thresh, viz=FALSE, msg=TRUE){
   # Get ruler as the biggest set of red pixels from the image
   if(msg) message("--- scaling - Extracting ruler...")
   IR <- correct_illumination(imager::R(img)) #RGB components with linear correction of illumination
@@ -119,7 +121,8 @@ redRulerTiles <- function(img, red_thresh=0.01, viz=FALSE, msg=TRUE){
   ruler_neg <- ruler_crop %>% invert_grayscale #negative
   seg_ruler <- gFastSeg(ruler_neg, px_range=c(1,100000000), viz=viz) #negative ruler segmentation
   l_seg_r <- lapply(seg_ruler, nrow) %>% unlist #label's size
-  median_threshold <- which(l_seg_r < 1.5 * median(l_seg_r) & l_seg_r > 0.5 * median(l_seg_r))
+  median_threshold <- which(l_seg_r < 1.5 * median(l_seg_r) &
+                              l_seg_r > 0.5 * median(l_seg_r))
   seg_tiles <- seg_ruler[median_threshold] #removes label too big or too small
   if(length(seg_tiles) == 0) stop("Error : Ruler tiles not found")
   
@@ -163,7 +166,8 @@ tilesUnitDist <- function(tiles_centroid, alpha=0.05, viz=FALSE){
     plot(h, col = bar_cols, border = NA, xlab = "Pixels",
          main = "Distance to 4 nearest neighbors of each tile")
     abline(v = c(lo_f, hi_f), col=2, lwd=1)
-    legend("topright", bty="n", pch=15, col=c("#4CAF50", "#aaaaaa"), legend=c("Kept", "Filtered"))
+    legend("topright", bty="n", pch=15, col=c("#4CAF50", "#aaaaaa"),
+           legend=c("Kept", "Filtered"))
     abline(v=unit_dist_mean, col="#235426", lwd=2)
   }
   
@@ -182,7 +186,8 @@ tilesUnitDist <- function(tiles_centroid, alpha=0.05, viz=FALSE){
 #' @param viz logical. visualization option
 #' @param msg logical. console message option
 #' @export
-redRulerScale <- function(img, red_thresh=0.01, alpha_confidence=0.05, viz=FALSE, msg=TRUE){
+redRulerScale <- function(img, red_thresh, alpha_confidence=0.05,
+                          viz=FALSE, msg=TRUE){
   tiles_centroid <- redRulerTiles(img, red_thresh=red_thresh, viz=viz, msg=msg)
   sc <- tilesUnitDist(tiles_centroid, alpha=alpha_confidence, viz=viz)
   scale_um <- sc["scale"]/1000
@@ -202,7 +207,7 @@ redRulerScale <- function(img, red_thresh=0.01, alpha_confidence=0.05, viz=FALSE
 #' @param red_thresh required difference in intensity between red component
 #' @param viz visualization option of redRulerScale
 #' and other components to detect the red ruler
-pipelineScale <- function(img, auto_scale, red_thresh=0.01, viz=FALSE){
+pipelineScale <- function(img, auto_scale, red_thresh, viz=FALSE){
   if(auto_scale){
     scale <- redRulerScale(img, msg=FALSE, red_thresh=red_thresh, viz=viz) #get scale
   } else {

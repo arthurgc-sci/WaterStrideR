@@ -4,10 +4,12 @@
 \alias{gCleanBin}
 \title{Clean individuals binary image}
 \usage{
-gCleanBin(l_img_bin, centroid, as_coords = TRUE, px_filter = 25)
+gCleanBin(l_img_bin, l_body_bin, centroid, as_coords = TRUE, px_filter = 25)
 }
 \arguments{
-\item{l_img_bin}{An image as pixset or c.img or a list of images}
+\item{l_img_bin}{A cimg or list of cimg of segmented full limbs}
+
+\item{l_body_bin}{A cimg or list of cimg of segmented body}
 
 \item{centroid}{Numeric xy coordinates of the body centroid, or a list body centroids}
 

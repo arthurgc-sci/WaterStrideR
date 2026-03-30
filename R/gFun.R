@@ -3,9 +3,11 @@
 
 #' Fast segmentation with size filter
 #'
-#' Given a binary image as pixset, returns list of coordinates of every label with pixels in the min-max range
+#' Given a binary image as pixset, returns list of coordinates of every label
+#' with pixels in the min-max range
 #' @param img_bin a pixset
-#' @param px_range numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand
+#' @param px_range numerical vector of length 2. range in pixels of expected
+#'   body size. Check imager::label(image_binary) with boxplots beforehand
 #' @param viz boolean for visualization
 #' @export
 gFastSeg <- function(img_bin, px_range=c(300,1500), viz=TRUE){
@@ -64,30 +66,40 @@ gDetectionPlot <- function(base_img, scale, x, y, auto_scale){
 #'
 #' Accessory function for gCrop,
 #'
-#' @param list_points A list of numeric vectors, each representing a point (typically of length 2: x and y).
-#' @param list_size A numeric vector or list of same length as \code{list_points}, representing the diameter or window size around each point.
-#' @param scaling_factor A numeric scalar used to scale the size of each bounding box (default is 1).
+#' @param list_points A list of numeric vectors, each representing a point
+#'   (typically of length 2: x and y).
+#' @param list_size A numeric vector or list of same length as
+#'   \code{list_points}, representing the diameter or window size around each
+#'   point.
+#' @param scaling_factor A numeric scalar used to scale the size of each
+#'   bounding box (default is 1).
 #'
-#' @return A list of numeric vectors of length 4 (xmin, xmax, ymin, ymax) representing the cropped bounding boxes.
-#'
+#' @return A list of numeric vectors of length 4 (xmin, xmax, ymin, ymax)
+#'   representing the cropped bounding boxes.
+#' 
 cropPoints <- function(list_points, list_size, scaling_factor=1){
   out <- mapply(function(pt, dia){
-    crop_points <- sapply(pt, function(x) rep(x,2)) + c(-0.5,0.5,-0.5,0.5)*dia
+    crop_points <- vapply(pt, function(x) {
+        rep(x,2)
+      }, numeric(2)) + c(-0.5,0.5,-0.5,0.5)*dia
   }, list_points, list_size*scaling_factor, SIMPLIFY = FALSE)
   return(out)
 }
 
 #' Crop individual gerris
 #'
-#' Square crop around individual gerris centroids from image base_img with a diameter of factor*size
-#' Base image must be imported with imager package, centroids and sizes must be lists of same length
-#' Returns a list of inverted grayscale cropped images
+#' Square crop around individual gerris centroids from image base_img with a
+#' diameter of factor*size Base image must be imported with imager package,
+#' centroids and sizes must be lists of same length Returns a list of inverted
+#' grayscale cropped images
 #'
 #' @param base_img c.img. Base image suitable for waterstrider pipeline
-#' @param centroids list of xy vectors. Body centroids coordinates of individuals
+#' @param centroids list of xy vectors. Body centroids coordinates of
+#'   individuals
 #' @param sizes list or vector. Body length of individuals
 #' @param viz logical. visualization option
-#' @param factor numerical. Numerical value for crop size relative to individual's body length
+#' @param factor numerical. Numerical value for crop size relative to
+#'   individual's body length
 #'
 #' @export
 gCrop <- function(base_img, centroids, sizes, viz=FALSE, factor=3.5){
@@ -99,8 +111,20 @@ gCrop <- function(base_img, centroids, sizes, viz=FALSE, factor=3.5){
   #Crop
   crop_points0 <- cropPoints(centroids, sizes, factor)
   crop_points <- lapply(crop_points0, round) #'manual' round to avoid useless computation
+  dim_im <- dim(base_img[,,1,1]) #range of image
+  mx <- dim_im[1]
+  my <- dim_im[2]
+  crop_points2 <- lapply(crop_points, function(p){ #do not crop outside of image range
+    p[,1][p[,1] <= 0] <- 1
+    p[,2][p[,2] <= 0] <- 1
+    p[,1][p[,1] >= mx] <- mx
+    p[,2][p[,2] >= my] <- my
+    p
+  })
+  crop_centroids <- mapply(function(cen, cr){ cen-cr[1,]+1 },
+                           cen=centroids, cr=crop_points2, SIMPLIFY=FALSE)
   pb <- progress::progress_bar$new(total=length(centroids))
-  res <- lapply(crop_points, function(crop_pt_df){
+  res <- lapply(crop_points2, function(crop_pt_df){
     xrange <- crop_pt_df[,1]
     yrange <- crop_pt_df[,2]
     x <- NA
@@ -117,54 +141,28 @@ gCrop <- function(base_img, centroids, sizes, viz=FALSE, factor=3.5){
     plot(base_img) #plot base image
     cen_df <- do.call(rbind, centroids)
     text(cen_df, asp=1, pch=4, cex=0.5, col=2) #plot centroids
-    lapply(crop_points, function(x){
+    lapply(crop_points2, function(x){
       square_pts <- matrix(x[c(1,1,2,2,1,
                                3,4,4,3,3)], ncol=2) #format for square
       points(square_pts, type="l", col=3) #plot square
     }) %>% invisible #avoid NULL outputs of 'lapply' in the console caused by the use of lapply for graphics only
   }
-  return(list(img=res, crop_coords=crop_points))
-}
-
-#'Remove gerris bodies
-#'
-#' Changes the values of given set of pixel coordinate body_lab_points to 0
-#' in an image base_img
-#'
-#' @param base_img c.img. Base image suitable for waterstrider pipeline
-#' @param body_lab_points a list of dataframes, a dataframe or a matrix
-#' of coordinates of individual's body points 
-#' @param viz logical.visualization option
-#'
-#' @export
-gNobody <- function(base_img, body_lab_points, viz=FALSE){
-  #Error handling
-  if(!is.matrix(body_lab_points) & !is.list(body_lab_points) & !is.matrix(body_lab_points)) stop("Error : body_lab_points should be a list of dataframes, a dataframe or a matrix")
-  if(!imager::is.cimg(base_img)) stop("Error : base_img must be of type c.img")
-  if(!is.list(body_lab_points)){ #if it's a coordinates matrix or a dataframe
-    allbodies <- body_lab_points
-  } else {
-    allbodies <- do.call(rbind, body_lab_points) #aggregate list of presumed matrices/dataframes
-  }
-  linear_index <- coordsToLinear(allbodies, base_img)#convert pixel coordinate format to linear index format for imager
-  L_channel <- length(base_img[,,,1]) #number of pixels in the image (so per channel)
-  im_rmb <- base_img
-  im_rmb[c(linear_index, linear_index+L_channel, linear_index+L_channel*2)] <- 0 #set to 0 for all 3 channels based on linear index
-  if(viz){
-    plot(im_rmb)
-  }
-  return(im_rmb)
+  return(list(img=res, crop_coords=crop_points2, centroid=crop_centroids))
 }
 
 #' Clean individuals binary image
 #'
-#' Removes components touching the edges except for the body + removes small spots
-#' @param l_img_bin An image as pixset or c.img or a list of images
-#' @param centroid Numeric xy coordinates of the body centroid, or a list body centroids
+#' Removes components touching the edges except for the body + removes small
+#' spots
+#' @param l_img_bin A cimg or list of cimg of segmented full limbs
+#' @param l_body_bin A cimg or list of cimg of segmented body
+#' @param centroid Numeric xy coordinates of the body centroid, or a list body
+#'   centroids
 #' @param as_coords A boolean
-#' @param px_filter A numerical. Minimum amount pixel to keep label 
+#' @param px_filter A numerical. Minimum amount pixel to keep label
 #' @export
-gCleanBin <- function(l_img_bin, centroid, as_coords=TRUE, px_filter=25){
+gCleanBin <- function(l_img_bin, l_body_bin, centroid,
+                      as_coords=TRUE, px_filter=25){
   if(!is.list(l_img_bin)){
     if(all(is.na(l_img_bin)) | all(is.na(centroid))) { return(NA) }
     if(!imager::is.cimg(l_img_bin) & !imager::is.pixset(l_img_bin)) {
@@ -178,14 +176,15 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=TRUE, px_filter=25){
 
   if(is.list(l_img_bin)){ #vectorization
     pb <- progress::progress_bar$new(total = length(l_img_bin))
-    res <- mapply(function(img_bin, cen){
+    res <- mapply(function(img_bin, body_bin, cen){
       pb$tick()
-      return( gCleanBin(img_bin, cen, as_coords) )
-    }, l_img_bin, centroid, SIMPLIFY=FALSE)
+      return( gCleanBin(img_bin, body_bin, cen, as_coords) )
+    }, l_img_bin, l_body_bin, centroid, SIMPLIFY=FALSE)
     return(res)
   }
   if(all(is.na(l_img_bin))) return(NA)
   #0 innit
+  l_img_bin[l_body_bin==1] <- 1
   dimX <- nrow(l_img_bin); dimY <- ncol(l_img_bin)
   labs0 <- imager::label(im=l_img_bin) #label different connected white patches
   labs <- labs0
@@ -198,7 +197,9 @@ gCleanBin <- function(l_img_bin, centroid, as_coords=TRUE, px_filter=25){
   #3 Remove small spots
   unique_labs <- unique(labs)
   labs_val_r <- unique_labs[!(unique_labs %in% edge_labs_cen)]#remove edge contact
-  labs_val_rsp <- labs_val_r[sapply(labs_val_r, function(x) sum(labs==x)) >= px_filter]
+  labs_val_rsp <- labs_val_r[vapply(labs_val_r,
+                                    function(x) sum(labs==x),
+                                    numeric(1)) >= px_filter]
   img_res <- imager::as.cimg(labs %in% labs_val_rsp, dim=c(dimX, dimY, 1, 1))
   if(as_coords){ img_res <- img_res %>% imgAsCoords }
 
@@ -254,13 +255,15 @@ dilBodies <- function(body_img, body_length, dilation_ratio=0.3){
 
 #' Gerris orientation angle
 #'
-#' Orientation based on body points PCA, then antero-posterior point density, or appendages repartition
+#' Orientation based on body points PCA, then antero-posterior point density, or
+#' appendages repartition
 #'
-#' @param body_coords list or single dataframe or matrix of body points coordinates
-#' @param intersection_coords list or single dataframe or matrix of 
-#' full individual and dilated body contour intersection coordinates
+#' @param body_coords list or single dataframe or matrix of body points
+#'   coordinates
+#' @param intersection_coords list or single dataframe or matrix of full
+#'   individual and dilated body contour intersection coordinates
 #' @param diag a logical for output analysis diagnostic messages
-#' 
+#'
 #' @export
 gOrientation <- function(body_coords, intersection_coords, diag=FALSE){
   if(is.list(body_coords) & is.list(intersection_coords)){
@@ -297,8 +300,9 @@ gOrientation <- function(body_coords, intersection_coords, diag=FALSE){
 
 #' Gerris limbs intersection points
 #'
-#' For v a boolean of intersection points in the contour, assume limb intersections as continuous sequences
-#' of intersection values in the contour. Compute first, last, and middle point of each sequence
+#' For v a boolean of intersection points in the contour, assume limb
+#' intersections as continuous sequences of intersection values in the contour.
+#' Compute first, last, and middle point of each sequence
 #'
 #' @param v a vector of logical values
 #'
@@ -319,23 +323,28 @@ gLimbInter <- function(v){
 
 #' Find rear leg insertions
 #'
-#' Returns rear leg insertions points as xy coordinates from the dilated body contour dilated_body
-#' using head orientation angle ori_angle in radians and intersection between dilated body contour and full body
-#' as boolean, like $index output of  <-
+#' Returns rear leg insertions points as xy coordinates from the dilated body
+#' contour dilated_body using head orientation angle ori_angle in radians and
+#' intersection between dilated body contour and full body as boolean, like
+#' $index output of  <-
 #'
-#' @param ori_angle Numerical value or vector of numericals
-#' for orientation angle of individuals in radians
-#' @param dil_contour list or single dilated body contour as ordered xy coordinates matrix or dataframe
-#' @param inter_index list or single vector of numericals for indexes of intersection points
-#' in corresponding dilated contour
-#' @param leg_lim_ratio numeric vector of length two. Values between 0 and 1 to define range where
-#' legs are expected to be found as ratio of body elongation starting from the back (excluding head appendages and hind body part)
-#' 
+#' @param ori_angle Numerical value or vector of numericals for orientation
+#'   angle of individuals in radians
+#' @param dil_contour list or single dilated body contour as ordered xy
+#'   coordinates matrix or dataframe
+#' @param inter_index list or single vector of numericals for indexes of
+#'   intersection points in corresponding dilated contour
+#' @param leg_lim_ratio numeric vector of length two. Values between 0 and 1 to
+#'   define range where legs are expected to be found as ratio of body
+#'   elongation starting from the back (excluding head appendages and hind body
+#'   part)
+#'
 #' @export
 gLegInsertion <- function(ori_angle, dil_contour, inter_index,
                           leg_lim_ratio=c(0.25, 0.6)){
   if(is.list(dil_contour) & is.list(inter_index)){
-    res <- mapply(gLegInsertion, ori_angle, dil_contour, inter_index, SIMPLIFY=FALSE)
+    res <- mapply(gLegInsertion, ori_angle, dil_contour,
+                  inter_index, SIMPLIFY=FALSE)
     return(res)
   }
   if(is.na(ori_angle) | length(unique(inter_index))==1){
@@ -347,21 +356,23 @@ gLegInsertion <- function(ori_angle, dil_contour, inter_index,
   limbs_base <- dil_contour[seq_inter$mid,]
   #orient elements
   ang_rot <- -ori_angle #get rotation angle to orient individual
-  rot_mat <- matrix(c(cos(ang_rot), -sin(ang_rot), sin(ang_rot), cos(ang_rot)), ncol = 2) #rotation matrix
+  rot_mat <- matrix(c(cos(ang_rot), -sin(ang_rot),
+                      sin(ang_rot),cos(ang_rot)), ncol = 2) #rotation matrix
   limbs_base_r <- limbs_base %>% as.matrix %*% rot_mat
   cont_r <- dil_contour %>% as.matrix %*% rot_mat
   bary_r <-  bary %*% rot_mat
   #remove limbs insertion on rear-most first 25% of elongation (likely not legs)
   cont_r_min <- min(cont_r[,1])
   int_elong_ratio <- (limbs_base_r[,1]-cont_r_min)/(max(cont_r[,1])-cont_r_min) #normalized position of insertion in elongation direction
-  valid_limbs_id <- (int_elong_ratio > leg_lim_ratio[1]) & (int_elong_ratio < leg_lim_ratio[2]) #spacial constraint : no body and no antennas
+  valid_limbs_id <- (int_elong_ratio > leg_lim_ratio[1]) &
+                    (int_elong_ratio < leg_lim_ratio[2]) #spacial constraint : no body and no antennas
   #find anterior insertion for both sides
   left_limbs_id <- limbs_base_r[,2] > bary_r[,2] #under y=0 on barycenter reference : right side
   inser <- list()
   valid_left <- left_limbs_id & valid_limbs_id
   valid_right <- !left_limbs_id & valid_limbs_id
-  inser$left <- limbs_base[valid_left,][limbs_base_r[valid_left, 1] %>% which.min, ]
-  inser$right <- limbs_base[valid_right,][limbs_base_r[valid_right,1] %>% which.min,]
+  inser$left <- limbs_base[valid_left,][which.min(limbs_base_r[valid_left, 1]),]
+  inser$right <- limbs_base[valid_right,][which.min(limbs_base_r[valid_right,1]),]
 
   #if(is.null(inser)){ inser <- NA}
   return(inser)
@@ -370,8 +381,9 @@ gLegInsertion <- function(ori_angle, dil_contour, inter_index,
 
 #' Leg segmentation
 #'
-#' Leg segmentation using insertion points as output of gLegInsertion to detect matching limbs
-#' first separates limbs by substracting dilated body to full individual
+#' Leg segmentation using insertion points as output of gLegInsertion to detect
+#' matching limbs first separates limbs by substracting dilated body to full
+#' individual
 #'
 #' @param gerris `cimg` or list of `cimg`
 #' @param dilated_body `cimg` or list of `cimg`
@@ -416,29 +428,34 @@ gLegSeg <- function(gerris, dilated_body, intersection_coords, insertions){
 
 #' Find knee and ankle of gerris leg
 #'
-#' Ankle and knee position using angle along the contour of the leg,
-#' oriented with the body insertion point
+#' Ankle and knee position using angle along the contour of the leg, oriented
+#' with the body insertion point
 #'
 #' @param leg_coords leg points coordinates
 #' @param insertion insertion points coordinates
 #' @param inser_thresh Numerical value in range 0:1 for threshold to remove
-#' angular points too close to the leg insertion point
-#' (value as fraction of half contour length)
+#'   angular points too close to the leg insertion point (value as fraction of
+#'   half contour length)
 #' @param tresh_ankle Numerical value in range 0:1 for threshold to detect if
-#' the difference between the two knee-ankle distances is realistically acceptable 
-#' (value as fraction of half contour length)
-#' @param viz logical. visualization of landmark positionning and peak along contour distance profile
-#' @param viz_angle a boolean. For diagnostic plots of leg contour angle variation and peak fitting
+#'   the difference between the two knee-ankle distances is realistically
+#'   acceptable (value as fraction of half contour length)
+#' @param viz logical. visualization of landmark positionning and peak along
+#'   contour distance profile
+#' @param viz_angle a boolean. For diagnostic plots of leg contour angle
+#'   variation and peak fitting
 #' @param msg logical. message option
-#' @param inflexion_pts_range vector of two integers. Tolerated range of inflexion points on leg contour
-#' @param knee_diff_thresh numerical in \code{[0, 1]}. 
-#' Tolerated ratio between the distances from the insertion point to each detected knee
-#' A value close to 0 will ensure knee-insertion distances are similar
-#' @param segment_length_range vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
-#' as ratio of half leg contour distance
-#' @param n_splines an integer. Number of splines to fit leg contour angle variation
-#' @param search_w an integer. Distance (in number of points in contour) to use to compute leg contour angles
-#' 
+#' @param inflexion_pts_range vector of two integers. Tolerated range of
+#'   inflexion points on leg contour
+#' @param knee_diff_thresh numerical in \code{[0, 1]}. Tolerated ratio between
+#'   the distances from the insertion point to each detected knee A value close
+#'   to 0 will ensure knee-insertion distances are similar
+#' @param segment_length_range vector of two numericals in \code{[0, 1]}. Range
+#'   of tolerated leg segment size as ratio of half leg contour distance
+#' @param n_splines an integer. Number of splines to fit leg contour angle
+#'   variation
+#' @param search_w an integer. Distance (in number of points in contour) to use
+#'   to compute leg contour angles
+#'
 #' @importFrom stats dist
 #' @export
 gLegLandmarks <- function(leg_coords,
@@ -453,6 +470,7 @@ gLegLandmarks <- function(leg_coords,
                           segment_length_range = c(0.15, 0.6),
                           n_splines = 30,
                           search_w = 6) {
+  
   if(!all(names(insertion)==names(leg_coords))) stop("Names of insertion and leg_coords must match")
   if(is.null(insertion) | all(is.na(insertion)) |
      is.null(leg_coords) | all(is.na(leg_coords))){ # | length(leg_coords)==2 ???
@@ -468,7 +486,8 @@ gLegLandmarks <- function(leg_coords,
   leg_img <- coordsAsImg(leg_coords, padding=2, return_offset=TRUE) #image conversion for contour algorithm
   leg_cont_offset <- simpleCont(leg_img$img) #contour of image with offset
   cont <- leg_cont_offset + matrix(leg_img$coord_offset[1,],
-                                   nrow=nrow(leg_cont_offset), ncol=2, byrow=TRUE) #offset correction
+                                   nrow=nrow(leg_cont_offset),
+                                   ncol=2, byrow=TRUE) #offset correction
   peaks <- tryCatch({contourTurns(cont, search_w = search_w,
                                   splines_df = n_splines, viz = viz_angle)}, #contour angles
                     error = function(e) {
@@ -479,7 +498,9 @@ gLegLandmarks <- function(leg_coords,
     if(msg) message("no peak found")
     return(NA)
   }
+  
   # 1 - Find insertion
+  cont <- as.matrix(cont)
   lcont <- nrow(cont) #n points of contour
   overlap <- overlapPoints(cont, insertion, coords=FALSE)
   if(all(overlap==F)){ #insertion not overlapping with contour?
@@ -490,7 +511,9 @@ gLegLandmarks <- function(leg_coords,
   reord <- (inser_id:(inser_id + lcont-1)) %% lcont +1#contour index insertion points as origin
   reord <- (inser_id:(inser_id + lcont-1)) %% lcont +1#contour index insertion points as origin
   cont_inser <- rbind(cont[reord,], cont[reord[1],]) #cicular contour
-  peaks_inser <- sapply(peaks, function(x) which(reord %in% x)) %>% sort
+  peaks_inser <- vapply(peaks, function(x){
+    which(reord %in% x)
+    }, integer(1)) %>% sort
   dist <- sqrt(diff(cont_inser[,1])^2 + diff(cont_inser[,2])^2) #distance between pairs of points
   dist_cont <- sum(dist)
   dist_peaks_str <- c(0,(dist %>% cumsum))[peaks_inser] #distance of each peak to the insertion point
@@ -510,19 +533,21 @@ gLegLandmarks <- function(leg_coords,
       filt_ids <- ids[y] #valid numeric id
       cont_inser[filt_ids,][1,] #1st corresponding contour point in each direction
     })
-    knee_abs_dist <- sapply(filt_cont_pts, function(x){
+    knee_abs_dist <- vapply(filt_cont_pts, function(x){
       (insertion-x)^2 %>% sum %>% sqrt #distance
-    })
+    }, numeric(1))
     knee_dist <- mapply(function(x,y) {x[y][1]}, dist_peaks, filt_id) #for later
     knee_abs_diff <- (knee_abs_dist %>% diff / sum(knee_abs_dist)) %>% abs
     if(knee_abs_diff < knee_diff_thresh) { 
       #4 Ankles
       ankle_dist <- mapply(function(x,y) {x[y][2]}, dist_peaks, filt_id)
       if( (diff(ankle_dist-knee_dist) %>% abs / cont_half_l) > tresh_ankle ){ #if the dif between the two knee-ankle distances is above tresh_ankle% of half contour length
-        ankle_dist1 <- mapply(function(x,y,z) {x[y][z]}, dist_peaks, filt_id, c(2,3)) #distance between points 1-3(straight contour) and 1-2(reverse contour)
-        ankle_dist2 <- mapply(function(x,y,z) {x[y][z]}, dist_peaks, filt_id, c(3,2)) #distance between points 1-2(straight contour) and 1-3(reverse contour)
-        option1 <- (diff(ankle_dist1-knee_dist) %>% abs / cont_half_l) < tresh_ankle #knee-ankle distances is above tresh_ankle% of half contour length
-        option2 <- (diff(ankle_dist2-knee_dist) %>% abs / cont_half_l) < tresh_ankle  #knee-ankle distances is above tresh_ankle% of half contour length
+        ankle_dist1 <- mapply(function(x,y,z) {x[y][z]},
+                              dist_peaks, filt_id, c(2,3)) #distance between points 1-3(straight contour) and 1-2(reverse contour)
+        ankle_dist2 <- mapply(function(x,y,z) {x[y][z]},
+                              dist_peaks, filt_id, c(3,2)) #distance between points 1-2(straight contour) and 1-3(reverse contour)
+        option1 <- (abs(diff(ankle_dist1-knee_dist))/cont_half_l) < tresh_ankle #knee-ankle distances is above tresh_ankle% of half contour length
+        option2 <- (abs(diff(ankle_dist2-knee_dist))/cont_half_l) < tresh_ankle  #knee-ankle distances is above tresh_ankle% of half contour length
         if(is.na(option1)){ option1 <- FALSE }
         if(is.na(option2)){ option2 <- FALSE }
         if(option1) { ankle_dist <- ankle_dist1 }
@@ -546,9 +571,9 @@ gLegLandmarks <- function(leg_coords,
     ankle_pts <- cont_inser[names(ankle_dist) %>% as.numeric, ]
     knee <- apply(knee_pts,2,mean)
     ankle <- apply(ankle_pts,2,mean)
-    segment_lengths <- sapply(list(insertion, ankle), function(pt){  #for safety check
+    segment_lengths <- vapply(list(insertion, ankle), function(pt){  #for safety check
       ((pt -knee)^2 %>% sum %>% abs %>% sqrt)/cont_half_l
-    })
+    }, numeric(1))
     if( all(segment_lengths < min(segment_length_range) |
             segment_lengths > max(segment_length_range)) ){ #incoherent segment sizes relative to contour
       if(msg) message("incoherent segment sizes relative to contour")
@@ -565,29 +590,34 @@ gLegLandmarks <- function(leg_coords,
       return(NA) #any segment (tibia or femur) smaller than 40% of the other
     }
     if(viz) vizLegLandmarks(cont_inser, inser_thresh, dist_peaks_str,
-                            dist_peaks_rev, dist, knee, ankle, knee_pts, ankle_pts, peaks_inser)
-    return(data.frame(insertion = cont_inser[1,] %>% unlist, knee = knee, ankle = ankle) %>% t)
+                            dist_peaks_rev, dist, knee, ankle, knee_pts,
+                            ankle_pts, peaks_inser)
+    return(data.frame(insertion = cont_inser[1,] %>% unlist,
+                      knee = knee, ankle = ankle) %>% t)
   } else { return( NA )}
 }
 
 
 #' Visualization function for gLegLandmarks()
-#' 
+#'
 #' Plot 1: Inflexion points to insertion point distance + insertion threshold
 #' PLot 2: Contour reordered around insertion point + inflexion points
-#' 
+#'
 #' @param cont_inser cicular contour
-#' @param inser_thresh threshold to remove angular points too close to the leg insertion point
+#' @param inser_thresh threshold to remove angular points too close to the leg
+#'   insertion point
 #' @param dist_peaks_str distance of each peak to the insertion point
-#' @param dist_peaks_rev counterclockwise distance of each peak to the insertion point
+#' @param dist_peaks_rev counterclockwise distance of each peak to the insertion
+#'   point
 #' @param dist distance between pairs of points
 #' @param knee knee point
 #' @param ankle ankle point
 #' @param knee_pts knee joint points
 #' @param ankle_pts ankle joint points
 #' @param peaks_inser names to track index in contour
-vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str, dist_peaks_rev,
-                            dist, knee, ankle, knee_pts, ankle_pts, peaks_inser){
+vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str,
+                            dist_peaks_rev, dist, knee, ankle, knee_pts,
+                            ankle_pts, peaks_inser){
   par(mfrow=c(1,2))
   #P1 Inflexion points to insertion point distance + insertion threshold
   n_p <- length(dist_peaks_str)
@@ -615,15 +645,16 @@ vizLegLandmarks <- function(cont_inser, inser_thresh, dist_peaks_str, dist_peaks
 
 
 #' Loop logic for leg landmarking in gPipeline
-#' 
-#' Allows handling of more than one leg when provided with a specific input structure :
-#' Use case 1 - One individual : assumes named list of two elements "right" and "left"
-#' Use case 2 - Multiple individuals : assumes list of individuals as described in case 1
-#' 
-#' @param leg_coords numerical matrix or dataframe or list of those types.
-#' leg points coordinates
+#'
+#' Allows handling of more than one leg when provided with a specific input
+#' structure : Use case 1 - One individual : assumes named list of two elements
+#' "right" and "left" Use case 2 - Multiple individuals : assumes list of
+#' individuals as described in case 1
+#'
+#' @param leg_coords numerical matrix or dataframe or list of those types. leg
+#'   points coordinates
 #' @param insertion numerical matrix or dataframe or list of those types.
-#' insertion points coordinates
+#'   insertion points coordinates
 #' @param ... arguments to be passed to gLegLandmarks()
 gLegLandmarksLoop <- function(leg_coords, insertion, ...){
   get_res <- function(leg, ins){
@@ -647,7 +678,11 @@ gLegLandmarksLoop <- function(leg_coords, insertion, ...){
   }
   
   #B - structure = list of right+left
-  if(all(sapply(insertion, \(i) all(names(i) %in% c("left","right"))))){
+  if(all(
+      vapply(insertion, function(i){
+        all(names(i) %in% c("left","right"))
+      }, logical(1))
+    )){
     pb <- progress::progress_bar$new(total = length(leg_coords))
     res <- mapply(function(leg, ins){
       pb$tick()
@@ -660,13 +695,14 @@ gLegLandmarksLoop <- function(leg_coords, insertion, ...){
 
 #' Connect leg landmarks with body
 #'
-#' As gLegLandmarks() finds insertion point on dilated body, the insertion landmark is biased
-#' Given body as xy coords and landmarks as output of gLegLandmarks(), corrects the insertion point
+#' As gLegLandmarks() finds insertion point on dilated body, the insertion
+#' landmark is biased Given body as xy coords and landmarks as output of
+#' gLegLandmarks(), corrects the insertion point
 #'
-#' @param body dataframe or matrix of body points coordinates 
+#' @param body dataframe or matrix of body points coordinates
 #' @param landmarks landmarks as output of gLegLandmarks()
 #' @param viz logical.visualization option
-#' 
+#'
 #' @export
 gConnectLeg <- function(body, landmarks, viz=FALSE){
   #Vectorization assuming left/right inner nesting for landmarks
@@ -719,7 +755,8 @@ gConnectLeg <- function(body, landmarks, viz=FALSE){
 
 #' Measure tibia and femur
 #'
-#' Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg() or gLegLandmarks()
+#' Scale from pixel to micrometer, and landmarks as outputs of gConnectLeg() or
+#' gLegLandmarks()
 #'
 #' @param landmarks landmarks as output of gLegLandmarks()
 #' @param scale a numerical value for conversion from pixels to micrometers
@@ -728,8 +765,10 @@ gMeasureLeg <- function(landmarks, scale){
   if(landmarks[[1]] %>% is.list){
     res <- lapply(landmarks, function(lmk){
       list(
-        left = tryCatch({gMeasureLeg(lmk$left, scale)}, error = function(e) { NA }),
-        right = tryCatch({gMeasureLeg(lmk$right, scale)}, error = function(e) { NA })
+        left = tryCatch({gMeasureLeg(lmk$left, scale)},
+                        error = function(e) { NA }),
+        right = tryCatch({gMeasureLeg(lmk$right, scale)},
+                         error = function(e) { NA })
       )})
     return(res)
   }
@@ -748,27 +787,35 @@ gMeasureLeg <- function(landmarks, scale){
 
 #' Individual plot for gPipeline
 #'
-#' Individual plot for gPipeline, designed to be used on lists of internal 
+#' Individual plot for gPipeline, designed to be used on lists of internal
 #' variables of gPipepline()
 #'
-#' @param i index of the individual to plot in the list-format variables of gPipeline()
+#' @param i index of the individual to plot in the list-format variables of
+#'   gPipeline()
 #' @param full Similar to the internal variable of the same name in gPipeline()
 #' @param body Similar to the internal variable of the same name in gPipeline()
 #' @param cen Similar to the internal variable of the same name in gPipeline()
-#' @param dilcont Similar to the internal variable of the same name in gPipeline()
+#' @param dilcont Similar to the internal variable of the same name in
+#'   gPipeline()
 #' @param ang Similar to the internal variable of the same name in gPipeline()
 #' @param legs Similar to the internal variable of the same name in gPipeline()
-#' @param leg_lm Similar to the internal variable of the same name in gPipeline()
-#' @param leg_size Similar to the internal variable of the same name in gPipeline()
+#' @param leg_lm Similar to the internal variable of the same name in
+#'   gPipeline()
+#' @param leg_size Similar to the internal variable of the same name in
+#'   gPipeline()
 #' @param inser Similar to the internal variable of the same name in gPipeline()
-#' @param clean_base_path Similar to the internal variable of the same name in gPipeline()
-#' @param body_L_pts Similar to the internal variable of the same name in gPipeline()
-#' @param body_length Similar to the internal variable of the same name in gPipeline()
-#' 
+#' @param clean_base_path Similar to the internal variable of the same name in
+#'   gPipeline()
+#' @param body_L_pts Similar to the internal variable of the same name in
+#'   gPipeline()
+#' @param body_length Similar to the internal variable of the same name in
+#'   gPipeline()
+#'
 #' @importFrom graphics lines
 #' @export
 gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
-                        leg_lm, leg_size, inser, clean_base_path, body_L_pts, body_length){
+                        leg_lm, leg_size, inser, clean_base_path,
+                        body_L_pts, body_length){
   legend_err <- c()
   full_coords <- full[[i]] %>% imgAsCoords
   body_coords <- body[[i]]
@@ -786,12 +833,14 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
             inches = FALSE, add = TRUE, fg = NA, bg = "grey30")
   } else {
     plot(body[[i]], cex=0.1)
-    text(x=body[[i]][,1]%>%mean,y=body[[i]][,2]%>%mean,labels='FULL BODY SEGMENTATION FAILED')
+    text(x=body[[i]][,1] %>% mean,y=body[[i]][,2] %>% mean,
+         labels='FULL BODY SEGMENTATION FAILED')
   }
   centroid <- cen[[i]]
   bodyext <- body_L_pts[[i]] #Check body length measurement
   if(length(bodyext)==6 && all(is.numeric(bodyext))){
-    mapped_ext <- bodyext[1:2,] + matrix(rep(centroid-bodyext[3,],each=2),ncol=2)
+    mapped_ext <- bodyext[1:2,] +
+      matrix(rep(centroid-bodyext[3,],each=2),ncol=2)
     lines(mapped_ext, lwd=2, col="black")
     points(mapped_ext, pch=16, col="black")
     size <- round(body_length[[i]])
@@ -838,10 +887,14 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
           ft <- 11
           colo <- "#000000E6" #transparency
           posi <- 2
-          text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi) #dark outline
-          text(x=pt[1]+off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)
-          text(x=pt[1]-off, y=pt[2]+off, font=ft, labels=size[ix], col=colo, pos=posi)
-          text(x=pt[1]+off, y=pt[2]-off, font=ft, labels=size[ix], col=colo, pos=posi)
+          text(x=pt[1]-off, y=pt[2]-off, font=ft, labels=size[ix],
+               col=colo, pos=posi) #dark outline
+          text(x=pt[1]+off, y=pt[2]+off, font=ft, labels=size[ix],
+               col=colo, pos=posi)
+          text(x=pt[1]-off, y=pt[2]+off, font=ft, labels=size[ix],
+               col=colo, pos=posi)
+          text(x=pt[1]+off, y=pt[2]-off, font=ft, labels=size[ix],
+               col=colo, pos=posi)
           text(x=pt[1], y=pt[2], font=11, labels=size[ix],
                col=pal[ix], pos=posi)
         }
@@ -896,4 +949,92 @@ gSplitLegMeasures <- function(leg_list) {
   l_out2 <- lapply(l_out, unlist)
   l_out3 <- lapply(l_out2, function(x) stats::setNames(x, seq_along(x)) )
   return(l_out3)
+}
+
+#' Body segmentation
+#'
+#' Get precise and threshold-independant segmentation from rough body detection
+#' using Canny edges and kernel flood filling
+#'
+#' @param img input image as pixset or c.img
+#' @param centroid coordinates of body centroid
+#' @param k_size diamond kernel size to close gaps between Canny edges
+#' @param viz visualization option for contouring and hole filling
+#' @param a alpha parameter for imager::cannyEdges() (threshold adjusment
+#'   factor)
+#' @param s sigma parameter for imager::cannyEdges() (smoothing)
+#' @param msg return warnings.
+#' @export
+gBody <- function(img, centroid, k_size, viz=TRUE, a=1, s=1, msg=TRUE){
+  #1 - Create kernels
+  kern <- imager::as.cimg(diamondKern(k_size, msg=FALSE)) #kernel
+  kern2 <- imager::as.cimg(diamondKern(k_size*2, msg=FALSE)) #defines "close to rough body"
+  kern_d3 <- imager::as.cimg(diamondKern(3, msg=FALSE)) #minimal kernel
+  
+  #2 - Main function, using parameters set in gBody
+  getBody <- function(img, centroid){
+    #Safety
+    if(!inherits(img, "cimg")){
+      if(inherits(img, "pixset")){
+        img <- imager::as.cimg(img)
+      } else {
+        if(msg) warning("Provided img was not of class pixset or cimg, returning NA")
+        return(NA)
+      }
+    }
+    if(length(centroid)!=2 | !all(is.numeric(centroid))){
+      if(msg) warning("Provided centroid was not a numeric vector of length 2, returning NA")
+      return(NA)
+    }
+    
+    #Function
+    cx <- round(centroid[1])
+    cy <- round(centroid[2])
+    immain <- imager::as.cimg(imager::cannyEdges(img, alpha=a, sigma=s)) #edges
+    dilim <- imager::dilate(immain, kern) #dilate kernel: connect body contour edges but loses shape
+    lab_dilim <- imager::label(dilim)
+    target_lab <- lab_dilim[cx, cy, 1, 1]
+    labcen <- lab_dilim == target_lab #body segmentation with shape loss
+    if(dilim[cx, cy, 1, 1] != 0) {
+      if(msg) warning("Individual centroid fell on dilated edge.")
+      return(NA)
+    }
+    labcendil <- imager::dilate(labcen, kern) #refine body shape
+    immain[labcendil == 1] <- 2 #add here as new lab (should only overwrite 0 labels)
+    lab2 <- imager::label(immain) #label edges + rough body
+    # Get holes to fill as connected regions: not touching edges AND close to rough body
+    labcendildil <- imager::dilate(labcendil, kern2)
+    invalid_labels <- unique(as.vector(lab2[immain != 0 | !labcendildil])) #filter edge labels
+    all_labels <- unique(as.vector(lab2))
+    oklab <- setdiff(all_labels, c(0, invalid_labels))
+    if(length(oklab) > 0) {
+      immain[lab2 %in% oklab] <- 3 #fill valid labels with 3
+    }
+    combined_mask <- (immain == 2) | (immain == 3) #re-add valid holes
+    lab3 <- imager::label(imager::dilate(combined_mask, kern_d3)) #overlap edges
+    res <- lab3 == lab3[cx, cy, 1, 1] #make sure we only get the body using the centroid once again
+    #Safety
+    dims <- dim(img)
+    if(any(res[c(1, dims[1]), , 1, 1]) || any(res[, c(1, dims[2]), 1, 1])) {
+      if(msg) warning("Error in body detection, result touches crop edge")
+      return(NA)
+    }
+    #Visualization
+    if(viz){
+      immain[cx,cy,1,1] <- 4
+      graphics::image(immain[,,1,1],
+                      col=c(1,"#7a7a7a","#2b6938","#fa348d","red"), asp=1)
+    }
+    return(imager::as.cimg(res))
+  }
+  
+  #3 - Vectorization logic
+  if(is.list(img) & is.list(centroid) & length(centroid)==length(img)){ #vectorization for image list
+    res_l <- mapply(function(imi, cxyi){
+      getBody(img=imi, centroid=cxyi)
+    }, imi=img, cxyi=centroid, SIMPLIFY = FALSE)
+    return(res_l)
+  } else { #run for a single image
+    return(gBody(img=img, centroid=centroid))
+  }
 }

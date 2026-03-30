@@ -167,8 +167,8 @@ bodyLengthPC <- function(body_points){
 #' @param cuts number of bins to create along x
 #' @export
 checkSym <- function(pts, angle = 0, cuts = 10){
-  pts = pts %*% rotMat(angle) #rotate
-  pts = scale(pts,scale=F,center=T) #center
+  pts_r <-  pts %*% rotMat(angle) #rotate
+  pts <- scale(pts_r, scale = FALSE, center = TRUE) #center
   dist_val <- tapply(pts[,2], #for each y values in 10 bins along x elongation : 
                           cut(pts[,1], cuts), 
                           function(y) (0.5-sum(y>0)/length(y))^2 ) #squared diff from 50/50 above/under
@@ -195,7 +195,7 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
     })
     if(return_ext){
       res <- list(
-        len = sapply(res0, \(x) x$len),
+        len = vapply(res0, \(x) x$len, numeric(1)),
         body_L_pts = lapply(res0, \(x) x$body_L_pts)
       )
     } else {
@@ -204,6 +204,12 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
     return(res)
   }
   
+  if(all(is.na(body_pts))){
+    return(list(
+      len = NA,
+      body_L_pts = NA
+    ))
+  }
   #local symmetric angle optimization using PCA angle as prior 
   pca <- prcomp(body_pts) #PCA to find major axis
   anglePC <- atan2(pca$rotation[2,1], pca$rotation[1,1]) #rotation angle
@@ -214,10 +220,10 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
   best_angle <- opt$minimum #optimized point density based symmetry
   
   #contour extraction and format
-  cooim <- coordsAsImg(body_pts,5,T) #img needed for contour
+  cooim <- coordsAsImg(body_pts,5,TRUE) #img needed for contour
   contoff <- simpleCont(cooim$img) #contour
   cont <- contoff + matrix(cooim$coord_offset[1,],
-                           ncol=2,nrow=nrow(contoff),byrow=T) #back to base referential
+                           ncol=2,nrow=nrow(contoff),byrow=TRUE) #back to base referential
   contf <- as.matrix(cont) %*% rotMat(best_angle) #rotate
   contc <- rbind(contf,contf[1,]) #close contour
   
@@ -260,12 +266,11 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
 #'
 #'Load image from given path, negative filter, illumination correction filter, binarization based on threshold
 #'
-#' @param img_path a string. path to the base image  
+#' @param img a cimg.  
 #' @param threshold a numerical in range 0:1 for binarization threshold 
 #' @export 
-binaryLoad <- function(img_path, threshold){
-  img_pix <- imager::load.image(img_path) #load image with imager
-  img_gr <- imager::grayscale(img_pix) #in b/w
+grayThresh <- function(img, threshold){
+  img_gr <- imager::grayscale(img) #in b/w
   img_gr_inv <- img_gr %>%      #negative and illumination correction
     correct_illumination() %>%
     invert_grayscale()
@@ -291,7 +296,8 @@ coordsAsImg <- function(coords, padding=0, return_offset=FALSE){
   xy_range <- apply(coords, 2, range) #max and min values of coords
   max_range <- apply(xy_range, 2, diff) %>% max + 2*padding #longest dimensional span (x or y) + padding
   xy_mid <- apply(xy_range, 2, mean) #middle of coords to center the new image
-  fxy_range <- sapply(xy_mid, function(x) x+c(-max_range, max_range)/2) #x and y range of the new image
+  fxy_range <- vapply(xy_mid, function(x) x+c(-max_range, max_range)/2,
+                      numeric(2)) #x and y range of the new image
   img_matrix <- matrix(0, nrow = max_range+1, ncol = max_range+1) #empty matrix as base for new img
   min_range <- apply(fxy_range, 2, function(x) x %>% min %>% round)
   coord_offset <- matrix(min_range, nrow=nrow(coords), ncol=2, byrow=TRUE)
@@ -327,33 +333,28 @@ coordsToLinear <- function(coords, img){
 }
 
 
-#' Clean body shape as xy coordinates using morphological closing following by opening
+#' Clean body shape as cimg using morphological closing following by opening
 #'
-#' Square closing then closing of size kernel_size on body coordinates body_lab_points
-#' Returns either coordinates as_coord, or an image c.img
+#' Square closing then closing of size kernel_size on binary body points body_lab_points
+#' Returns a cimg image
 #'
-#' @param body_lab_points body points as numerical matrix or dataframe
+#' @param body_img body img cimg.
 #' @param kernel_size numerical integer. closing and opening kernel size in pixels
-#' @param as_coords logical. to return
 #' @export
-cleanBodyShape <- function(body_lab_points, kernel_size = 3, as_coords = TRUE){
-  if(!is.list(body_lab_points)){
-    body_lab_points <- list(body_lab_points) #convert to list if theres a single element for correct use of lapply
+cleanBodyShape <- function(body_img, kernel_size = 3){
+  if(kernel_size <= 1){
+    return(body_img) #ignore if kernel size is meaningless
   }
-  body_img <- lapply(body_lab_points, coordsAsImg, return_offset = TRUE, padding = kernel_size) #convert to img
-  closed_body_img <- lapply(body_img, function(x) imager::mclosing_square(x$img, size = kernel_size)) #morphological closing
-  opened_body_img <- lapply(closed_body_img, imager::mopening_square, size = kernel_size) #morphological opening
-  res <- opened_body_img
-  if(as_coords){
-    res <- mapply(function(x, y, z){
-      coords0 <- imgAsCoords(x) - (kernel_size + 2)
-      offset <- z$coord_offset[1,] %>% round + kernel_size+2
-      offset_matrix <- matrix(rep(offset, nrow(coords0)), ncol=2, byrow=TRUE)
-      coords <- coords0 + offset_matrix
-      return(coords)
-    }, opened_body_img, body_lab_points, body_img, SIMPLIFY=FALSE)
+  if(is.list(body_img)){ #vectorization
+    res <- lapply(body_img, cleanBodyShape, kernel_size = kernel_size)
+    return(res)
   }
-  return(res)
+  if(all(is.na(body_img))){
+    return(NA)
+  }
+  closed_body_img <- imager::mclosing_square(body_img, size = kernel_size) #morphological closing
+  opened_body_img <- imager::mopening_square(closed_body_img, size = kernel_size) #morphological opening
+  return(opened_body_img)
 }
 
 #' Simple contour coords of binary image
@@ -393,29 +394,24 @@ simpleCont <- function(img_bin){
 #' @param coords logical. to return numerical points coordinates
 #' @param index logical. to return point's index
 #' @export
-overlapPoints <- function(set_a, set_b, coords=TRUE, index=TRUE){
-  set_a <- set_a %>% as.matrix
-  set_b <- set_b %>% as.matrix
-  ptInPts <- function(pt, crds){
-    which(pt[1] == crds[,1] & pt[2] == crds[,2]) #2D vector both equal
+overlapPoints <- function(set_a, set_b, coords = TRUE, index = TRUE) {
+  #Vectorization
+  if (is.list(set_a) && is.list(set_b)) {
+    return(mapply(overlapPoints, set_a, set_b, 
+                  MoreArgs = list(coords = coords, index = index), 
+                  SIMPLIFY = FALSE))
   }
-  if(is.list(set_a) & is.list(set_b)){ #vectorization
-    res <- mapply(overlapPoints, set_a, set_b, SIMPLIFY = FALSE)
-    return(res)
-  }
-  if(length(set_a)==2) { #formating required if there's a single point in either set
-    set_a <- matrix(set_a, ncol = 2, byrow = TRUE)
-  }
-  if(length(set_b)==2) {
-    set_b <- matrix(set_b, ncol = 2, byrow = TRUE)
-  }
-  interID <- apply(set_b, 1, ptInPts, crds=set_a) %>% unlist
-  inter <- seq_len(nrow(set_a)) %in% interID
-  if(index && coords){
-    return(list("coords"=set_a[inter,], "index"=inter))
-  } else if(coords){
-    return(set_a[inter,])
-  } else if(index){
+  if(is.null(dim(set_a))) set_a <- matrix(set_a, ncol=2, byrow = TRUE) #as matrix
+  if(is.null(dim(set_b))) set_b <- matrix(set_b, ncol=2, byrow = TRUE)
+  ca <- complex(real = set_a[,1], imaginary = set_a[,2]) #2D coordinates to complex numbers to use linear %in% later
+  cb <- complex(real = set_b[,1], imaginary = set_b[,2])
+  inter <- ca %in% cb #a in b
+  #outputs
+  if (index && coords) {
+    return(list(coords = set_a[inter, , drop = FALSE], index = inter))
+  } else if (coords) {
+    return(set_a[inter, , drop = FALSE])
+  } else if (index) {
     return(inter)
   }
 }
@@ -475,22 +471,26 @@ contourTurns <- function(coords, search_w=5, splines_df=30, angle_thresh=0.15, v
   convex <- convex[yconv > angle_thresh]
   yconc <- yconc[yconc > angle_thresh]
   yconv <- yconv[yconv > angle_thresh]
+
   #viz
-  colvcont <- sapply(angcont, function(x){ gray(1-x) }) #color values for plot
-  if(viz==1){ #viz 1
-    par(mfrow=c(1,2))
-    plot(angcont, main='Splines and peak fitting', type='l', lwd=2)
-    points(m_pred, type='l', col='green3', lwd=2)
-    points(yconc~concave, col='blue', pch=16)
-    points(yconv~convex, col='red', pch=16)
-    plot(coords, col=colvcont, main='Contour angle variation', pch=16, as=1)
-    points(coords[concave,], col='blue', cex=1, pch=13)
-    points(coords[convex,], col='red', cex=1, pch=13)
-    par(mfrow=c(1,1))
-  }else if(viz==2){ #viz 2
-    plot(coords, col=colvcont, main='Contour angle variation', pch=16, as=1)
-    points(coords[concave,], col='blue', cex=2)
-    points(coords[convex,], col='red', cex=2)
+  if(viz != 0){
+    colvcont <- vapply(angcont, function(x){ gray(1-x) },
+                       character(1)) #color values for plot
+    if(viz==1){ #viz 1
+      par(mfrow=c(1,2))
+      plot(angcont, main='Splines and peak fitting', type='l', lwd=2)
+      points(m_pred, type='l', col='green3', lwd=2)
+      points(yconc~concave, col='blue', pch=16)
+      points(yconv~convex, col='red', pch=16)
+      plot(coords, col=colvcont, main='Contour angle variation', pch=16, as=1)
+      points(coords[concave,], col='blue', cex=1, pch=13)
+      points(coords[convex,], col='red', cex=1, pch=13)
+      par(mfrow=c(1,1))
+    }else if(viz==2){ #viz 2
+      plot(coords, col=colvcont, main='Contour angle variation', pch=16, as=1)
+      points(coords[concave,], col='blue', cex=2)
+      points(coords[convex,], col='red', cex=2)
+    }
   }
   return(convex)
 }
@@ -594,3 +594,55 @@ rotMat <- function(angle){
   matrix(c(cos(-angle), -sin(-angle), sin(-angle), cos(-angle)), 2, 2)
 }
 
+#' Crop image using gCrop(...)$crop_coords
+#' 
+#' @param img a cimg object
+#' @param crop_coords crop coordinates as output of gCrop(...)$crop_coords
+recropImg <- function(img, crop_coords){
+  if(is.list(crop_coords)){
+    return(lapply(crop_coords, recropImg, img = img))
+  }
+  x <- NA
+  y <- NA #avoid warnings in devtools::check() and goodpractice::gp()
+  xrange <- crop_coords[,1]
+  yrange <- crop_coords[,2]
+  crop <- imager::imsub(img, x %inr% xrange, y %inr% yrange) #crop
+  return(crop)
+}
+
+#' Substract points from image (also invert grayscale)
+#' 
+#' @param base_body base body cimg. Can be passed as list
+#' @param seg_body binary body cimg. Can be passed as list
+#' @export
+gSubBody <- function(base_body, seg_body){
+  if(is.list(base_body) && is.list(seg_body) && length(base_body)==length(seg_body)){
+    res_l <- mapply(gSubBody, base_body, seg_body)
+    return(res_l)
+  }
+  #Safety
+  if(all(is.na(base_body)) | all(is.na(seg_body))) return(NA)
+  if(!all(dim(base_body)[1:2]==dim(seg_body)[1:2])) return(NA)
+  if(!imager::is.cimg(base_body)) stop("Error : base_body must be of type c.img or NA")
+  if(!imager::is.cimg(seg_body)) stop("Error : seg_body must be of type c.img or NA")
+  
+  base_body[seg_body==1] <- 0 #thats it
+  return(base_body)
+}
+
+#' Make diamond kernel matrix
+#' 
+#' @param sz kernel diameter size
+#' @param msg boolean. Show rounding message 
+#' @export
+diamondKern <- function(sz, msg=TRUE){
+  if((sz%%2)!=1){
+    sz <- sz+1
+    if(msg){
+      message("sz rounded to next odd number: ", sz)
+    }
+  }
+  mid <- ceiling(sz/2)
+  im <- outer(1:sz, 1:sz, function(i,j) as.integer(abs(i-mid)+abs(j-mid) <= mid-1))
+  return(im)
+}
