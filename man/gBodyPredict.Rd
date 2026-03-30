@@ -9,11 +9,12 @@ gBodyPredict(img_data, angle, what)
 \arguments{
 \item{img_data}{c.img or list of c.img of segmented bodies}
 
-\item{angle}{angle, vector of angles or list of angles of the segmented bodies}
+\item{angle}{angle, vector of angles or list of angles of the segmented
+bodies}
 
 \item{what}{"sex" or "wing". Data to be predicted.}
 }
 \description{
-Wrapper for gBodyPredict1, allowing for format control and vectorization
-From segmented body binary images: contour, orientation, resampling,
+Wrapper for gBodyPredict1, allowing for format control and vectorization From
+segmented body binary images: contour, orientation, resampling,
 }

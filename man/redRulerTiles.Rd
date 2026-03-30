@@ -2,26 +2,22 @@
 % Please edit documentation in R/scales.R
 \name{redRulerTiles}
 \alias{redRulerTiles}
-\title{Red ruler tiles centroids
-
-From image with red ruler and no other big red object : returns dataframe of centroids of each
-tiles of the scale}
+\title{Red ruler tiles centroids}
 \usage{
-redRulerTiles(img, red_thresh = 0.01, viz = FALSE, msg = TRUE)
+redRulerTiles(img, red_thresh, viz = FALSE, msg = TRUE)
 }
 \arguments{
-\item{img}{c.img including a red ruler and no other red object bigger than it.}
+\item{img}{c.img including a red ruler and no other red object bigger than
+it.}
 
-\item{red_thresh}{required difference in intensity between red component
-and other components to detect the red ruler}
+\item{red_thresh}{required difference in intensity between red component and
+other components to detect the red ruler}
 
 \item{viz}{a boolean. visualization option}
 
 \item{msg}{a boolean. Console output option}
 }
 \description{
-Red ruler tiles centroids
-
-From image with red ruler and no other big red object : returns dataframe of centroids of each
-tiles of the scale
+From image with red ruler and no other big red object : returns dataframe of
+centroids of each tiles of the scale
 }

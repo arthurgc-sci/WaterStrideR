@@ -12,19 +12,23 @@ gLegInsertion(
 )
 }
 \arguments{
-\item{ori_angle}{Numerical value or vector of numericals
-for orientation angle of individuals in radians}
+\item{ori_angle}{Numerical value or vector of numericals for orientation
+angle of individuals in radians}
 
-\item{dil_contour}{list or single dilated body contour as ordered xy coordinates matrix or dataframe}
+\item{dil_contour}{list or single dilated body contour as ordered xy
+coordinates matrix or dataframe}
 
-\item{inter_index}{list or single vector of numericals for indexes of intersection points
-in corresponding dilated contour}
+\item{inter_index}{list or single vector of numericals for indexes of
+intersection points in corresponding dilated contour}
 
-\item{leg_lim_ratio}{numeric vector of length two. Values between 0 and 1 to define range where
-legs are expected to be found as ratio of body elongation starting from the back (excluding head appendages and hind body part)}
+\item{leg_lim_ratio}{numeric vector of length two. Values between 0 and 1 to
+define range where legs are expected to be found as ratio of body
+elongation starting from the back (excluding head appendages and hind body
+part)}
 }
 \description{
-Returns rear leg insertions points as xy coordinates from the dilated body contour dilated_body
-using head orientation angle ori_angle in radians and intersection between dilated body contour and full body
-as boolean, like $index output of  <-
+Returns rear leg insertions points as xy coordinates from the dilated body
+contour dilated_body using head orientation angle ori_angle in radians and
+intersection between dilated body contour and full body as boolean, like
+$index output of  <-
 }

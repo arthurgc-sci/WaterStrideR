@@ -17,8 +17,8 @@ gRunPipeline(img_path, return_df = TRUE, ...)
 A list of results returned by \code{gPipeline()}.
 }
 \description{
-Checks if an input can be valid for either gPipline or gMultiPipeline,
-and use the appropriate function, or return a specific error message
+Checks if an input can be valid for either gPipline or gMultiPipeline, and
+use the appropriate function, or return a specific error message
 }
 \seealso{
 \code{\link[=gPipeline]{gPipeline()}}

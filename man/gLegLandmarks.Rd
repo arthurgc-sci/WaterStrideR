@@ -25,33 +25,38 @@ gLegLandmarks(
 \item{insertion}{insertion points coordinates}
 
 \item{inser_thresh}{Numerical value in range 0:1 for threshold to remove
-angular points too close to the leg insertion point
-(value as fraction of half contour length)}
+angular points too close to the leg insertion point (value as fraction of
+half contour length)}
 
 \item{tresh_ankle}{Numerical value in range 0:1 for threshold to detect if
-the difference between the two knee-ankle distances is realistically acceptable
-(value as fraction of half contour length)}
+the difference between the two knee-ankle distances is realistically
+acceptable (value as fraction of half contour length)}
 
-\item{viz}{logical. visualization of landmark positionning and peak along contour distance profile}
+\item{viz}{logical. visualization of landmark positionning and peak along
+contour distance profile}
 
-\item{viz_angle}{a boolean. For diagnostic plots of leg contour angle variation and peak fitting}
+\item{viz_angle}{a boolean. For diagnostic plots of leg contour angle
+variation and peak fitting}
 
 \item{msg}{logical. message option}
 
-\item{inflexion_pts_range}{vector of two integers. Tolerated range of inflexion points on leg contour}
+\item{inflexion_pts_range}{vector of two integers. Tolerated range of
+inflexion points on leg contour}
 
-\item{knee_diff_thresh}{numerical in \code{[0, 1]}.
-Tolerated ratio between the distances from the insertion point to each detected knee
-A value close to 0 will ensure knee-insertion distances are similar}
+\item{knee_diff_thresh}{numerical in \code{[0, 1]}. Tolerated ratio between
+the distances from the insertion point to each detected knee A value close
+to 0 will ensure knee-insertion distances are similar}
 
-\item{segment_length_range}{vector of two numericals in \code{[0, 1]}. Range of tolerated leg segment size
-as ratio of half leg contour distance}
+\item{segment_length_range}{vector of two numericals in \code{[0, 1]}. Range
+of tolerated leg segment size as ratio of half leg contour distance}
 
-\item{n_splines}{an integer. Number of splines to fit leg contour angle variation}
+\item{n_splines}{an integer. Number of splines to fit leg contour angle
+variation}
 
-\item{search_w}{an integer. Distance (in number of points in contour) to use to compute leg contour angles}
+\item{search_w}{an integer. Distance (in number of points in contour) to use
+to compute leg contour angles}
 }
 \description{
-Ankle and knee position using angle along the contour of the leg,
-oriented with the body insertion point
+Ankle and knee position using angle along the contour of the leg, oriented
+with the body insertion point
 }

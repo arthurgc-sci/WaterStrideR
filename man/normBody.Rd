@@ -9,9 +9,10 @@ normBody(img_bin, ori_angle)
 \arguments{
 \item{img_bin}{c.img or list of c.img of waterstrider body image(s)}
 
-\item{ori_angle}{angle, vector of angles or list of angles of the segmented bodies}
+\item{ori_angle}{angle, vector of angles or list of angles of the segmented
+bodies}
 }
 \description{
-Orient body contours extracted from image using provided angles then define consistent
-contour starting point as leftmost point
+Orient body contours extracted from image using provided angles then define
+consistent contour starting point as leftmost point
 }

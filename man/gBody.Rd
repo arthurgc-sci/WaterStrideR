@@ -15,13 +15,14 @@ gBody(img, centroid, k_size, viz = TRUE, a = 1, s = 1, msg = TRUE)
 
 \item{viz}{visualization option for contouring and hole filling}
 
-\item{a}{alpha parameter for imager::cannyEdges() (threshold adjusment factor)}
+\item{a}{alpha parameter for imager::cannyEdges() (threshold adjusment
+factor)}
 
 \item{s}{sigma parameter for imager::cannyEdges() (smoothing)}
 
 \item{msg}{return warnings.}
 }
 \description{
-Get precise and threshold-independant segmentation from rough body detection using Canny edges
-and kernel flood filling
+Get precise and threshold-independant segmentation from rough body detection
+using Canny edges and kernel flood filling
 }

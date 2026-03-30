@@ -10,10 +10,12 @@ openGrDevice(title = "R Graphics Window")
 \item{title}{a string. Graphic window's name}
 }
 \value{
-\code{TRUE} if the graphics device was successfully opened, \code{FALSE} otherwise.
+\code{TRUE} if the graphics device was successfully opened, \code{FALSE}
+otherwise.
 }
 \description{
-Opens an interactive graphics device suitable for the current operating system.
+Opens an interactive graphics device suitable for the current operating
+system.
 \itemize{
 \item On \strong{macOS}, uses \code{quartz()}
 \item On \strong{Linux} and \strong{Windows}, uses \code{X11()}

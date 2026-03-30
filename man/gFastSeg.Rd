@@ -9,10 +9,12 @@ gFastSeg(img_bin, px_range = c(300, 1500), viz = TRUE)
 \arguments{
 \item{img_bin}{a pixset}
 
-\item{px_range}{numerical vector of length 2. range in pixels of expected body size. Check imager::label(image_binary) with boxplots beforehand}
+\item{px_range}{numerical vector of length 2. range in pixels of expected
+body size. Check imager::label(image_binary) with boxplots beforehand}
 
 \item{viz}{boolean for visualization}
 }
 \description{
-Given a binary image as pixset, returns list of coordinates of every label with pixels in the min-max range
+Given a binary image as pixset, returns list of coordinates of every label
+with pixels in the min-max range
 }

@@ -7,7 +7,8 @@
 scoresEFA(ori_cont, nb_h = 7, viz = FALSE, resamp = 100)
 }
 \arguments{
-\item{ori_cont}{contour or list of contours (as 2D numeric dataframe of matrix) of waterstrider body image(s)}
+\item{ori_cont}{contour or list of contours (as 2D numeric dataframe of
+matrix) of waterstrider body image(s)}
 
 \item{nb_h}{number of harmonics to compute}
 

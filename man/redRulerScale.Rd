@@ -6,7 +6,7 @@
 \usage{
 redRulerScale(
   img,
-  red_thresh = 0.01,
+  red_thresh,
   alpha_confidence = 0.05,
   viz = FALSE,
   msg = TRUE

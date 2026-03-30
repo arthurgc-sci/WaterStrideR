@@ -2,7 +2,8 @@
 % Please edit documentation in R/gModels.R
 \name{gBodyPredict1}
 \alias{gBodyPredict1}
-\title{Prediction pipeline for sex or wings - single image, to be used in gBodyPredict}
+\title{Prediction pipeline for sex or wings - single image, to be used in
+gBodyPredict}
 \usage{
 gBodyPredict1(img, ang, rs, pca, lda)
 }
@@ -18,5 +19,6 @@ gBodyPredict1(img, ang, rs, pca, lda)
 \item{lda}{a MASS lda object.}
 }
 \description{
-Prediction pipeline for sex or wings - single image, to be used in gBodyPredict
+Prediction pipeline for sex or wings - single image, to be used in
+gBodyPredict
 }

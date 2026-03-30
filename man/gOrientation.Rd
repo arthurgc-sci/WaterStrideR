@@ -7,13 +7,15 @@
 gOrientation(body_coords, intersection_coords, diag = FALSE)
 }
 \arguments{
-\item{body_coords}{list or single dataframe or matrix of body points coordinates}
+\item{body_coords}{list or single dataframe or matrix of body points
+coordinates}
 
-\item{intersection_coords}{list or single dataframe or matrix of
-full individual and dilated body contour intersection coordinates}
+\item{intersection_coords}{list or single dataframe or matrix of full
+individual and dilated body contour intersection coordinates}
 
 \item{diag}{a logical for output analysis diagnostic messages}
 }
 \description{
-Orientation based on body points PCA, then antero-posterior point density, or appendages repartition
+Orientation based on body points PCA, then antero-posterior point density, or
+appendages repartition
 }

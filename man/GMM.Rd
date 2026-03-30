@@ -16,11 +16,12 @@ adjust weights}
 
 \item{viz}{visualization option}
 
-\item{n_noise_sd}{numerical. standard deviation of normal noise to add
-to the data to help breaking plateaus in he data, not compatible with findPeaks()}
+\item{n_noise_sd}{numerical. standard deviation of normal noise to add to the
+data to help breaking plateaus in he data, not compatible with findPeaks()}
 }
 \description{
-returns the GMM model of a distribution as a numeric vector img_val and a dataframe of the parameters with possibility
-of removing the one with the highest mean. n integer vector of components to test
-if n length > 1 : the number of components will be decided using BIC
+returns the GMM model of a distribution as a numeric vector img_val and a
+dataframe of the parameters with possibility of removing the one with the
+highest mean. n integer vector of components to test if n length > 1 : the
+number of components will be decided using BIC
 }

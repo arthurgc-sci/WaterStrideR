@@ -16,5 +16,6 @@ GMMdRoots(GMM_df, y, viz = FALSE, msg = TRUE)
 \item{msg}{onsole pessage option}
 }
 \description{
-Give roots of y for the derivative of given GMM parameters as dataframe created with GMM function
+Give roots of y for the derivative of given GMM parameters as dataframe
+created with GMM function
 }

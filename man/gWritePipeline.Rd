@@ -14,22 +14,25 @@ gWritePipeline(
 )
 }
 \arguments{
-\item{img_path}{valid path to processed image, used to define writing directory}
+\item{img_path}{valid path to processed image, used to define writing
+directory}
 
-\item{i_plots}{list of plots of individuals as created by gPipeline with write_output=T}
+\item{i_plots}{list of plots of individuals as created by gPipeline with
+write_output=T}
 
-\item{detection_plot}{whole image detection plot as created by gPipeline with write_output=T}
+\item{detection_plot}{whole image detection plot as created by gPipeline with
+write_output=T}
 
 \item{df_out}{corresponding dataframe created by gPipeline}
 
 \item{dim_img}{dimensions of base image}
 
-\item{single_write}{writing method
-True : a directory is created for the current image, containing plots and dataframe
-False : a single 'out' directory with all plots is created for the current directory
+\item{single_write}{writing method True : a directory is created for the
+current image, containing plots and dataframe False : a single 'out'
+directory with all plots is created for the current directory
 ,gMultiPipeline is supposed to take in charge the creation of the dataframe}
 }
 \description{
-Plot and dataframe Writing function for gPipeline, an alternative printing method is
-implemented for gMultiPipeline by passing single_write=False
+Plot and dataframe Writing function for gPipeline, an alternative printing
+method is implemented for gMultiPipeline by passing single_write=False
 }

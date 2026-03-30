@@ -11,12 +11,14 @@ gCleanBin(l_img_bin, l_body_bin, centroid, as_coords = TRUE, px_filter = 25)
 
 \item{l_body_bin}{A cimg or list of cimg of segmented body}
 
-\item{centroid}{Numeric xy coordinates of the body centroid, or a list body centroids}
+\item{centroid}{Numeric xy coordinates of the body centroid, or a list body
+centroids}
 
 \item{as_coords}{A boolean}
 
 \item{px_filter}{A numerical. Minimum amount pixel to keep label}
 }
 \description{
-Removes components touching the edges except for the body + removes small spots
+Removes components touching the edges except for the body + removes small
+spots
 }

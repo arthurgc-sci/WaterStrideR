@@ -20,11 +20,13 @@ vizLegLandmarks(
 \arguments{
 \item{cont_inser}{cicular contour}
 
-\item{inser_thresh}{threshold to remove angular points too close to the leg insertion point}
+\item{inser_thresh}{threshold to remove angular points too close to the leg
+insertion point}
 
 \item{dist_peaks_str}{distance of each peak to the insertion point}
 
-\item{dist_peaks_rev}{counterclockwise distance of each peak to the insertion point}
+\item{dist_peaks_rev}{counterclockwise distance of each peak to the insertion
+point}
 
 \item{dist}{distance between pairs of points}
 

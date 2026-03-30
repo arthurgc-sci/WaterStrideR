@@ -16,6 +16,7 @@ gLegSeg(gerris, dilated_body, intersection_coords, insertions)
 \item{insertions}{\verb{x,y} matrix or list of \verb{x,y} matrices}
 }
 \description{
-Leg segmentation using insertion points as output of gLegInsertion to detect matching limbs
-first separates limbs by substracting dilated body to full individual
+Leg segmentation using insertion points as output of gLegInsertion to detect
+matching limbs first separates limbs by substracting dilated body to full
+individual
 }
