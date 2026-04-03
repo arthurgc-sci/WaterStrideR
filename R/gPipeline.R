@@ -123,7 +123,7 @@ gPipeline <- function(# INPUT
   #Body length
   bl_output <- bodyLength(imgAsCoords(clean_body), return_ext=TRUE) #clean bodylength
   body_length_pix <- bl_output$len
-  body_length_cor <- (body_length_pix-1.662)/0.961 #SMA regression bias correction
+  body_length_cor <- body_length_pix #(body_length_pix-1.662)/0.961 #SMA regression bias correction
   body_length <- body_length_pix/scale[1] #conversion in microns
   if(auto_scale){
     error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
