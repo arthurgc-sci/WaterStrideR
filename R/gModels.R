@@ -84,113 +84,171 @@ scoresEFA <- function(ori_cont, nb_h=7, viz=FALSE, resamp=100){
     } else stop("ori_cont must be a contour with 2 dimensions (rows and columns)")
   } else single <- FALSE
   outs <- Momocs::Out(ori_cont) #outline Momocs object
-  outs_rs <- outs %>% coo_interpolate(n = resamp)  #resample
-  efa <- outs_rs %>% efourier(nb.h=nb_h,  #elliptic fourier analysis
+  outs_rs <- Momocs::coo_interpolate(outs, n = resamp)  #resample
+  efa <- Momocs::efourier(outs_rs, nb.h=nb_h,  #elliptic fourier analysis
                               norm=TRUE) #center and scale to harmonic 1 unit size
   
   if(viz){ #visualization
     if(single){
-      warning("No visualisation allowed for a single contour")
+      warning("No visualization implemented for a single contour")
     } else {
       par(mfrow=c(1,1))
       outs_rs <- outs_rs %>% coo_center() %>% coo_scale()
       stack(outs_rs) #outlines superposition
       outs_rs %>% panel() #all outlines
       outs_rs %>% calibrate_harmonicpower_efourier(nb.h=nb_h) #elliptic fourier calibration
-      plot_PCA(PCA(efa))
+      plot_PCA(Momocs::PCA(efa))
     }
   }
 
   return(efa)
 }
 
-#' Prediction pipeline for sex or wings
-#'
-#' Wrapper for gBodyPredict1, allowing for format control and vectorization From
-#' segmented body binary images: contour, orientation, resampling,
-#'
-#' @param img_data c.img or list of c.img of segmented bodies
-#' @param angle angle, vector of angles or list of angles of the segmented
-#'   bodies
-#' @param what "sex" or "wing". Data to be predicted.
+#' Body contour normalization pipeline for LDA models
+#' 
+#' @param body c.img. Segmented body.
+#' @param ang numerical. Body elongation angle.
+#' @param resamp positive integer. Resampling size of body contour.
 #' @export
-gBodyPredict <- function(img_data, angle, what){
-  #Load required models and set corresponding parameters
-  if(what=="sex"){
-    rs <- 20 #group resampling
-    pca <- loadModel("PCAsex") #group PCA
-    lda <- loadModel("LDAsex") #group LDA
-  } else if(what=="wing"){
-    rs <- 40
-    pca <- loadModel("PCAwing")
-    lda <- loadModel("LDAwing")
-  } else stop("'what' should be 'sex' or 'wing'")
-  
-  #Vectorization with safety
-  if(is.list(img_data)){ #img_data is list
-    ang_len <- length(angle)
-    if(ang_len == length(img_data)){ #angle has more than 1 element
-      if(ang_len == length(img_data)){ #matching length
-        valid <- !( vapply(angle, function(x) all(is.na(x)), logical(1)) |
-                    vapply(img_data, function(x) all(is.na(x)), logical(1)) ) #non na points, boolean
-        if(sum(valid) >= 1){ #at least 1 valid point
-          res <- vector(mode="list", length=ang_len)
-          valid_res <- mapply(function(img, ang){ #make predictions
-            gBodyPredict1(img=img, ang=ang, rs=rs, pca=pca, lda=lda)
-          }, img_data[valid], angle[valid], SIMPLIFY=FALSE)
-          res[valid] <- valid_res #index preservation !
-          
-          #output format
-          res <- list(  #NA for non valid ang-img pair
-            class=rep(NA,ang_len),
-            posterior=data.frame(matrix(NA, nrow=ang_len, ncol=2)),
-            x=rep(NA,ang_len)
-          )
-          colnames(res$posterior) <- colnames(valid_res[[1]]$posterior)
-          res$class[valid] <- lapply(valid_res,\(x) x$class) %>% unlist
-          res$posterior[valid, ] <- do.call(rbind,
-                                            lapply(valid_res,
-                                                   \(x) x$posterior))
-          res$x[valid] <- vapply(valid_res, \(i) i$x, numeric(1))
-          
-        } else {
-          stop("no valid (non-NA) img-angle pair")
-        }
-      } else {
-        stop("img_data and angle should have the same length")
-      }
-    } else { #img_data is list but only 1 angle is provided
-      stop("img_data is list but do not have the same length as provided angle(s)") 
-    }
-  } else { #Predict single
-    res <- gBodyPredict1(img=img_data, ang=angle, rs=rs, pca=pca, lda=lda)
-  }
-  
-  return(res)
+gNorm <- function(body, ang, resamp){
+  norm_cont <- normBody(img_bin = body, ori_angle = ang)
+  if(!is.list(norm_cont)) norm_cont <- list(norm_cont) #handle single
+  outs <- Momocs::Out(norm_cont) #outline Momocs object
+  outs_rs <- outs %>%
+    Momocs::coo_interpolate(n = resamp) %>%
+    Momocs::coo_center() %>%
+    Momocs::coo_scale()
+  return(outs_rs)
 }
 
-#' Prediction pipeline for sex or wings - single image, to be used in
-#' gBodyPredict
+#' Predict direction of head of Microvelia longipes
 #'
-#' @param img a c.img object. Segmented binary waterstrider body image.
-#' @param ang a number. Orientation angle of that individual.
-#' @param rs an integer.
-#' @param pca a prcomp object.
-#' @param lda a MASS lda object.
-#' @import MASS
+#' Uses body elongation axis, limb-body intersections and body EFA coefficients
+#' to predict direction of head as angle from centroid using trained LDA model.
+#'
+#' @param body c.img. Segmented body.
+#' @param dil_cont numerical matrix of data frame. Dilated body contour.
+#' @param inter_idx boolean vector matching dil_cont rows. Limb intersections 
+#' with dilated body contour.
+#' @param el_angle numerical in radians. Body elongation angle.
+#' confidence threshold under which returned angle should be NA.
+#' @param viz boolean. Visualization option.
 #' @export
-gBodyPredict1 <- function(img, ang, rs, pca, lda){
-  #safety
-  if(!imager::is.cimg(img)) stop("img should be a c.img")
-  if(!is.numeric(ang)) stop("ang should be a number")
+gDirection <- function(body, dil_cont, inter_idx, el_angle, viz = TRUE){
+  #Intersection features
+  inter_feat <- itxFeature(dil = dil_cont, int = inter_idx,
+                           ang = el_angle)
   
-  #Pre-processing data
-  ori_img <- normBody(img, ori_angle = ang) #orientation
-  H <- pca$rotation %>% nrow /4 #number of EFA harmonics for the PCA
-  PC <- lda$means %>% ncol #number of PC for the LDA
-  efa <- scoresEFA(ori_img, nb_h=H, viz=FALSE, resamp=rs)
-  pca_scores <- pca %>% predict(newdata = efa$coe)
-  #predictions
-  predictions <- lda %>% predict(newdata = pca_scores[,1:PC])
-  return(predictions)
+  #Shape features
+  outs_rs <- gNorm(body, el_angle, resamp = 100)
+  pca_mod <- loadModel("PCAori_mini")
+  n_harm <- nrow(pca_mod$rotation)/4 #number of EFA harmonics for the PCA
+  efa <- scoresEFA(outs_rs, nb_h = n_harm, resamp = 100)
+  pred_pca <- predict(pca_mod, newdata = efa$coe)
+  
+  #LDA Predictions
+  lda_mod <- loadModel("LDAori")
+  lda_names <- colnames(lda_mod$means)
+  n_comp <- sum(grepl("PC", lda_names))
+  feat_ori <- cbind(pred_pca[,1:n_comp, drop = FALSE], inter_feat)
+  if(!all(colnames(feat_ori)==lda_names)){
+    warning("Body direction LDA prediction feature build failed, returning NAs")
+    return(rep(NA, length(el_angle)))
+  }
+  pred <- predict(lda_mod, newdata = as.data.frame(feat_ori))
+  to_redirect <- ifelse(pred$class=="R", 1, 0) #Correct orientation
+  ang <- ((unlist(el_angle) + to_redirect*pi) %% (2*pi)) - pi
+  conf_pred <- pred$posterior > 0.95 #Confidence filter
+  conf_ok <- conf_pred[,"R", drop = FALSE] | conf_pred[,"L", drop = FALSE]
+  ang[!conf_ok] <- NA
+  
+  if(viz){
+    reorc <- lapply(1:length(outs_rs[[1]]), function(i){
+      if(to_redirect[i]==0){
+        return(outs_rs[[1]][[i]] %*% rotMat(pi))
+      }
+      else return(outs_rs[[1]][[i]])
+    })
+    outs_rsCC <- outs_rs
+    outs_rsCC[[1]] <- reorc
+    par(mfrow=c(1,2))
+    stack(outs_rs,title="Before")
+    stack(outs_rsCC,title="After") 
+  }
+  
+  return(ang)
+}
+
+#' Predict sex and presence of wings of Microvelia longipes
+#' 
+#' Use body EFA coefficients to predict sex and presence of wings using
+#' trained LDA model
+#' 
+#' @param body a c.img (or list of this type). Segmented body.
+#' @param angle a numerical (or vector of this type). Orientation angle of 
+#' corresponding body
+#' @importFrom MASS lda
+#' @export  
+gPredict <- function(body, angle){
+  if(length(body)==1 && is.list(body)) body <- body[[1]]
+  if(is.list(angle)) angle <- unlist(angle)
+  #Preprocessing
+  outs_rs <- gNorm(body = body, ang = angle - pi, resamp = 100) #trained on reversed angles
+  pca_mod <- loadModel("PCAbio_mini")
+  n_harm <- nrow(pca_mod$rotation)/4 #number of EFA harmonics for the PCA
+  efa <- scoresEFA(outs_rs, nb_h = n_harm, resamp = 100)
+  pred_pca <- predict(pca_mod, newdata = efa$coe)
+  #Prediction
+  lda_mod <- loadModel("LDAbio")
+  lda_names <- colnames(lda_mod$means)
+  n_comp <- sum(grepl("PC", lda_names))
+  pred <- predict(lda_mod, newdata = as.data.frame(pred_pca[,1:n_comp, drop = FALSE]))
+  split_pred <- strsplit(as.character(pred$class), split="[.]") #format
+  df_pred <- do.call(rbind, split_pred)
+  #Confidence
+  post <- pred$posterior
+  pred_names <- colnames(post)
+  f_id <- grep("F", pred_names) #index of female columns
+  w_id <- grep("1", pred_names)
+  f_prob <- rowSums(post[,f_id, drop = FALSE]) #cumprob for "F"
+  w_prob <- rowSums(post[,w_id, drop = FALSE])
+  sex_prob <- 0.5 + abs(f_prob - 0.5) #confidence in sex prediction
+  wing_prob <- 0.5 + abs(w_prob - 0.5)
+  #Output
+  na_ang <- is.na(angle) #NA handling
+  full_df <- as.data.frame(matrix(NA, nrow = length(na_ang), ncol = 4))
+  colnames(full_df) <- c("sex", "wing", "prob_sex", "prob_wing")
+  full_df[!na_ang, ] <- cbind(df_pred, sex_prob, wing_prob)
+  return(full_df)
+}
+
+#' Body-limbs intersection feature builder for orientation prediction model.
+#'
+#' Creates feature vector with: Ratio of intersection points in 3 equal-sized
+#' bins along dilated body elongation axis, and number of continuous
+#' intersection sequences along dilated body contour.
+#'
+#' @param dil list of dilated contour
+#' @param int list of limbs intersection index on dilcont
+#' @param ang list of body elongation axis angle 
+itxFeature <- function(dil, int, ang){
+  if (is.data.frame(dil) || is.matrix(dil)) dil <- list(dil) #as list if single
+  if (!is.list(int)) int <- list(int)
+  if (length(ang)==1) ang <- list(ang)
+  rdil <- mapply(function(d, r) as.matrix(d)%*%r, dil,
+                 lapply(ang, rotMat), SIMPLIFY = FALSE)
+  f1 <- mapply(function(dd,itx){
+    d <- dd[,1]
+    ran <- range(d)
+    dr <- diff(ran)
+    cuts <- cut(d[itx], breaks=ran[1]+c(-1, dr*0.333, dr*0.667, dr))
+    return(table(cuts)/sum(itx))
+  }, rdil, int, SIMPLIFY=FALSE)
+  f2 <- sapply(int, \(x){
+    if(length(unique(x))==1) 0
+    else boolSeqLim(x)$first %>% length
+  })
+  dfout <- cbind(do.call(rbind,f1), f2)
+  colnames(dfout) <- c("itxbin1","itxbin2","itxbin3","n_itx")
+  return(dfout)
 }

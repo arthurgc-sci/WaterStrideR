@@ -1,7 +1,7 @@
 #loadModel
 test_that("Models can be loaded", {
-  lda <- loadModel("LDAsex")
-  pca <- loadModel("PCAsex")
+  lda <- loadModel("LDAori")
+  pca <- loadModel("PCAbio_mini")
   expect_equal(inherits(pca, "prcomp"), TRUE)
   expect_equal(inherits(lda, "lda"), TRUE)
 })
@@ -20,8 +20,6 @@ test_that("Elliptic harmonics extraction",{
 #everything in gModels involving sex prediction
 test_that("correct feature prediction",{
   img_b <- readRDS(test_path("fixtures", "img_body.rds"))
-  res <- gBodyPredict(img_data=img_b, angle=-1.07, "sex")
-  expect_equal(res$posterior[,"F"] %>% as.numeric, 1)
+  res <- gPredict(body=img_b, angle=-1.07)
+  expect_equal(as.numeric(res), rep(1,4))
 })
-
-

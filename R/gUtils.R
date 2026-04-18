@@ -16,18 +16,22 @@
 #'
 #' @param img an imager::cimg
 #' @param nsamples an integer, pixel subsampling value.
+#' @param seed an integer, seed for reproducibility
 #'
 #' @returns an imager::cimg object
 #' @export
-correct_illumination <- function(img, nsamples = 1e4L) {
+correct_illumination <- function(img, nsamples = 1e4L, seed = NULL) {
   # convert to grayscale if needed
   if (rev(dim(img))[1L] > 1L) {
     img <- imager::grayscale(img)
   }
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   # linear regression trend
   samp_img <- img %>%
     as.data.frame() %>%
-    dplyr::sample_n(nsamples)
+    dplyr::slice_sample(n = nsamples)
   lm_img <- lm(value ~ x * y, data = samp_img)
   trend <- predict(lm_img, img)
   out <- img - trend
@@ -175,24 +179,42 @@ checkSym <- function(pts, angle = 0, cuts = 10){
   return(mean(dist_val, na.rm=TRUE)) #return mean value to gain independence to the value of cuts
 }
 
-#' Body length from body points
+#' Elongation angle of point cloud maximizing points symmetry
+#' 
+#' @param pts matrix or dataframe of 2D points of an object with even density
+#' @export
+elongAngle <- function(pts){
+  if(is.list(pts)){  #vectorization
+    return(lapply(pts, elongAngle))
+  }
+  if(all(is.na(pts))) return(NA)
+  if(is.data.frame(pts)) pts <- as.matrix(pts)
+  #local symmetric angle optimization using PCA angle as prior 
+  pca <- prcomp(pts) #PCA to find major axis
+  anglePC <- atan2(pca$rotation[2,1], pca$rotation[1,1]) #rotation angle
+  opt <- optimize(
+    f = function(angle) checkSym(pts, angle),
+    interval = anglePC + c(-0.4, 0.4) #approx pi/8
+  )
+  return(opt$minimum) #optimized point density based symmetry
+}
+
+#' Body length from body image and elongation angle
 #'
 #' Body length as distance between intersections of body outline with line passing
 #' through the centroid of the body and minimizing lateral point density difference 
 #' along body elongation axis defined using PCA 
 #'
-#' @param body_pts binary object as point cloud of even density
+#' @param body_img body image
+#' @param elong_angle numerical for elongation angle in rad
 #' @param viz logical. visualization option
 #' @param return_ext logical. output format, if TRUE, also returns points between which length was measured
 #' @importFrom stats optimize
 #' @export
-bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
-  if(is.list(body_pts)){ #vectorization if needed
-    pb <- progress::progress_bar$new(total=length(body_pts))
-    res0 <- lapply(body_pts, function(x){
-      pb$tick()
-      bodyLength(x, viz, return_ext)
-    })
+bodyLength <- function(body_img, elong_angle, viz=FALSE, return_ext=FALSE){
+  if(is.list(body_img) & is.list(elong_angle)){
+    res0 <- mapply(bodyLength, body_img, elong_angle, viz, return_ext,
+                   SIMPLIFY = FALSE)
     if(return_ext){
       res <- list(
         len = vapply(res0, \(x) x$len, numeric(1)),
@@ -204,35 +226,20 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
     return(res)
   }
   
-  if(all(is.na(body_pts))){
-    return(list(
-      len = NA,
-      body_L_pts = NA
-    ))
-  }
-  #local symmetric angle optimization using PCA angle as prior 
-  pca <- prcomp(body_pts) #PCA to find major axis
-  anglePC <- atan2(pca$rotation[2,1], pca$rotation[1,1]) #rotation angle
-  opt <- optimize(
-    f = function(angle) checkSym(body_pts, angle),
-    interval = anglePC + c(-0.4, 0.4) #approx pi/8
-  )
-  best_angle <- opt$minimum #optimized point density based symmetry
-  
   #contour extraction and format
-  cooim <- coordsAsImg(body_pts,5,TRUE) #img needed for contour
-  contoff <- simpleCont(cooim$img) #contour
-  cont <- contoff + matrix(cooim$coord_offset[1,],
-                           ncol=2,nrow=nrow(contoff),byrow=TRUE) #back to base referential
-  contf <- as.matrix(cont) %*% rotMat(best_angle) #rotate
+  cont <- simpleCont(body_img) #contour points from image
+  contf <- as.matrix(cont) %*% rotMat(elong_angle) #rotate
   contc <- rbind(contf,contf[1,]) #close contour
   
   #get intersections of contour with y=0
   centy <- mean(contc[,2]) #mean y
-  x <- contc[,1]; y <- contc[,2] - centy #center x and y
+  x <- contc[,1]
+  y <- contc[,2] - centy #center x and y
   idx <- which(diff(sign(y)) != 0) #y cross 0
-  x1 <- x[idx]; y1 <- y[idx] #corresponding pts coords
-  x2 <- x[idx + 1]; y2 <- y[idx + 1] #corresponding pts coords
+  x1 <- x[idx]
+  y1 <- y[idx] #corresponding pts coords
+  x2 <- x[idx + 1]
+  y2 <- y[idx + 1] #corresponding pts coords
   x_itx <- x1 - y1 * (x2 - x1) / (y2 - y1) #linear interpolation
   if(length(x_itx)<2){ #safety
     warning("Found less than 2 intersections of centered body outline with x axis")
@@ -243,14 +250,15 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
   
   #results
   len <- as.numeric(abs(dist(ext_pts))+1) #+2 as minimum of observation calibration (VS GMM full body threshold)
-  actual_ext_pts <- rbind(ext_pts %*% rotMat(-best_angle), colMeans(body_pts)) #points to plot in diag + add centroid
-
+  actual_ext_pts <- rbind(ext_pts %*% rotMat(-elong_angle), colMeans(cont)) #points to plot in diag + add centroid
+  
   #+1 to account for usage of pixel coords instead of full pixels (+0.5 on each side)
   if(viz){
-    plot(body_pts,as=1)
-    points(cont,t="l")
+    plot(body_img,as=1)
+    points(cont,t="l", lwd=3, col="#017515")
     lines(actual_ext_pts[1:2,], lwd=3, col=2)
-    actual_ext_pts %>% points(pch=16)
+    points(actual_ext_pts, pch=16,col="#00ff2c")
+    points(actual_ext_pts, pch=1)
   }
   if(return_ext){
     return(list(
@@ -272,7 +280,7 @@ bodyLength <- function(body_pts, viz=FALSE, return_ext=FALSE){
 grayThresh <- function(img, threshold){
   img_gr <- imager::grayscale(img) #in b/w
   img_gr_inv <- img_gr %>%      #negative and illumination correction
-    correct_illumination() %>%
+    correct_illumination(seed=123) %>%
     invert_grayscale()
   grayscale_values <- as.vector(img_gr_inv)
   img_bin <- img_gr_inv %>% imager::threshold(threshold) #binarization based on threshold

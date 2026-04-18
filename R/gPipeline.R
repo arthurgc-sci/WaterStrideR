@@ -62,35 +62,35 @@
 #'
 #' @export
 gPipeline <- function(# INPUT
-                      img_path,
-                      # OUTPUT
-                      write_output=TRUE,
-                      return_df=TRUE,
-                      single_write=TRUE,
-                      auto_scale=TRUE,
-                      predict_sex_wing=TRUE,
-                      return_everything=FALSE,
-                      # In-pipeline parameters
-                      # a. Key variables
-                      k.bin_thresh = 0.8, #body
-                      k.body_size_px_range = c(300,1500),
-                      k.edge_kernel = 5,
-                      k.clean_kernel = 1,
-                      k.crop_size_factor = 3.5,
-                      k.gmm_slope_value = -25,
-                      k.body_dilation_ratio = 0.22,
-                      k.leglm_search_w = 6,
-                      k.leglm_splines_df = 35,
-                      # b. Filters
-                      f.red_thresh = 0.02,
-                      f.clean_small_spots = 25,
-                      f.leg_lim_ratio = c(.25,.6),
-                      f.leg_inser_thresh = .1,
-                      f.leg_inser_knee_thresh = .2,
-                      f.leg_ankle_knee_thresh = .12,
-                      f.leg_n_inflexions = c(5, 7),
-                      f.segment_lengths_range = c(.15, .6)
-                      ){
+  img_path,
+  # OUTPUT
+  write_output=TRUE,
+  return_df=TRUE,
+  single_write=TRUE,
+  auto_scale=TRUE,
+  predict_sex_wing=TRUE,
+  return_everything=FALSE,
+  # In-pipeline parameters
+  # a. Key variables
+  k.bin_thresh = 0.8, #body
+  k.body_size_px_range = c(300,1500),
+  k.edge_kernel = 5,
+  k.clean_kernel = 1,
+  k.crop_size_factor = 3.5,
+  k.gmm_slope_value = -25,
+  k.body_dilation_ratio = 0.22,
+  k.leglm_search_w = 6,
+  k.leglm_splines_df = 35,
+  # b. Filters
+  f.red_thresh = 0.02,
+  f.clean_small_spots = 25,
+  f.leg_lim_ratio = c(.25,.6),
+  f.leg_inser_thresh = .1,
+  f.leg_inser_knee_thresh = .2,
+  f.leg_ankle_knee_thresh = .12,
+  f.leg_n_inflexions = c(5, 7),
+  f.segment_lengths_range = c(.15, .6)
+){
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
@@ -108,12 +108,12 @@ gPipeline <- function(# INPUT
   rough_body_size <- vapply(body_lab_points, bodyLengthPC, numeric(1)) #fast body size using PC elongation
   #Crop around body
   b_crop <- gCrop(base_img, body_centroids, rough_body_size, viz = FALSE,
-                factor = k.crop_size_factor)
+                  factor = k.crop_size_factor)
   #Get precise body
   b_cen <- b_crop$centroid #centroids in local reference frame
   body_img0 <- gBody(img = b_crop$img, centroid = b_cen,
                      k_size = 2, a = 1, s = 1,
-                    viz = FALSE, msg = FALSE)
+                     viz = FALSE, msg = FALSE)
   ok_body <- !is.na(body_img0) #index in base body detection
   body_img <- body_img0[ok_body] #filter
   cen <- b_cen[ok_body]
@@ -121,14 +121,16 @@ gPipeline <- function(# INPUT
   clean_body <- cleanBodyShape(body_img,
                                kernel_size = k.clean_kernel)
   #Body length
-  bl_output <- bodyLength(imgAsCoords(clean_body), return_ext=TRUE) #clean bodylength
+  body <- imgAsCoords(clean_body) #body points in local reference frame
+  e_ang <- elongAngle(body) #Elongation angle
+  bl_output <- bodyLength(clean_body, e_ang, return_ext=TRUE) #clean bodylength
   body_length_pix <- bl_output$len
   body_length_cor <- body_length_pix #(body_length_pix-1.662)/0.961 #SMA regression bias correction
   body_length <- body_length_pix/scale[1] #conversion in microns
   if(auto_scale){
     error_margin <- body_length*scale[2]/scale[1] #scale error margin (ignoring pixel error)
   } else error_margin <- NA
-
+  
   #Fit GMM to image values
   message("| \n4 - Individual thresholding")
   #remove body and crop
@@ -148,13 +150,13 @@ gPipeline <- function(# INPUT
   #2 - Dilated body contour as coords
   dilcont <- simpleCont(dilbody)
   #3 - Intersections (as boolean of rows in dilcont)
-  inter <- overlapPoints(dilcont, lapply(full,imgAsCoords))
+  inter <- overlapPoints(dilcont, imgAsCoords(full))
   #*** - Formats
   inter_coords <- lapply(inter, function(x) x$coords)
   inter_idx <- lapply(inter, function(x) x$index)
   #4 - Orientation (PCA+intersection|density)
-  body <- imgAsCoords(body_img) #body points in local reference frame
-  ang <- gOrientation(body, inter_coords)
+  ang <- gDirection(body = clean_body, dil_cont = dilcont, el_angle = e_ang,
+                    inter_idx = inter_idx, viz = FALSE) #LDA model prediction
   
   message("| \n6 - Leg segmentation")
   #5 - Hind legs insertions
@@ -170,30 +172,24 @@ gPipeline <- function(# INPUT
   #7 - Get Points of interest from leg
   leg_lm0 <- gLegLandmarksLoop(leg_coords = legs, insertion = inser,
                                viz=FALSE, msg=FALSE,
-                              search_w = k.leglm_search_w,
-                              n_splines = k.leglm_splines_df,
-                              inser_thresh = f.leg_inser_thresh,
-                              knee_diff_thresh = f.leg_inser_knee_thresh,
-                              tresh_ankle = f.leg_ankle_knee_thresh,
-                              inflexion_pts_range = f.leg_n_inflexions,
-                              segment_length_range = f.segment_lengths_range
-                              )
+                               search_w = k.leglm_search_w,
+                               n_splines = k.leglm_splines_df,
+                               inser_thresh = f.leg_inser_thresh,
+                               knee_diff_thresh = f.leg_inser_knee_thresh,
+                               tresh_ankle = f.leg_ankle_knee_thresh,
+                               inflexion_pts_range = f.leg_n_inflexions,
+                               segment_length_range = f.segment_lengths_range
+  )
   #8 - Correct insertion landmark by connection leg to body
   leg_lm <- gConnectLeg(body, leg_lm0)
   #9 - Distances
   leg_size <- gMeasureLeg(leg_lm, scale) #leg segment sizes in microns
-  #Sex and wing prediction using body contour
-
+  
+  #10 - Sex and wing prediction using body contour
   if(predict_sex_wing){
     message("| \n8 - Sex and wing prediction")
-    #prediction pipelines: body img > contour > EFA > PCA > LDA, using models from package
-    sex_prediction <- gBodyPredict(img_data = body_img, #NA handling built-in
-                                   angle = ang,
-                                   what = "sex")
-    wing_prediction <- gBodyPredict(img_data = body_img,
-                                    angle = ang,
-                                    what = "wing")
-    }
+    df_sw <- gPredict(body = clean_body, angle = ang)
+  }
   
   #OUTPUTS
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
@@ -211,17 +207,7 @@ gPipeline <- function(# INPUT
                        left_femur = leg_res$right_femur %>% round,
                        right_femur = leg_res$left_femur %>% round)
   legText(df_out)
-  if(predict_sex_wing){ #add columns for sex/wing predictions
-    df_sw <- data.frame(
-      sex = c("F","M")[sex_prediction$class],
-      F_prob = sex_prediction$posterior[,"F"],
-      M_prob = sex_prediction$posterior[,"M"],
-      wing = (wing_prediction$class %>% as.numeric)-1, #scale 2-1 (model levels) to 1-0
-      winged_prob = wing_prediction$posterior[,"2"],
-      wingless_prob = wing_prediction$posterior[,"1"]
-    )
-   df_out <- cbind(df_out, df_sw)
- }
+  if(predict_sex_wing) df_out <- cbind(df_out, df_sw) #add columns
   
   if(write_output){
     # Detection plot of the image

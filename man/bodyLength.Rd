@@ -2,12 +2,14 @@
 % Please edit documentation in R/gUtils.R
 \name{bodyLength}
 \alias{bodyLength}
-\title{Body length from body points}
+\title{Body length from body image and elongation angle}
 \usage{
-bodyLength(body_pts, viz = FALSE, return_ext = FALSE)
+bodyLength(body_img, elong_angle, viz = FALSE, return_ext = FALSE)
 }
 \arguments{
-\item{body_pts}{binary object as point cloud of even density}
+\item{body_img}{body image}
+
+\item{elong_angle}{numerical for elongation angle in rad}
 
 \item{viz}{logical. visualization option}
 

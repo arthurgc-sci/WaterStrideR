@@ -4,12 +4,14 @@
 \alias{correct_illumination}
 \title{Correct illumination}
 \usage{
-correct_illumination(img, nsamples = 10000L)
+correct_illumination(img, nsamples = 10000L, seed = NULL)
 }
 \arguments{
 \item{img}{an imager::cimg}
 
 \item{nsamples}{an integer, pixel subsampling value.}
+
+\item{seed}{an integer, seed for reproducibility}
 }
 \value{
 an imager::cimg object

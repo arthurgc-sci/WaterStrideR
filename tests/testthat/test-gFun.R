@@ -15,12 +15,11 @@ test_that("Small or edge-connex components removal from binary image", {
   expect_equal(nrow(res),9)
 })
 
-
 #dilBodies
 test_that("Size based body image dilation", {
   body_img <- readRDS(test_path("fixtures", "img_body.rds"))
-  L <- bodyLength(imgAsCoords(body_img))
-  expect_equal((dilBodies(body_img, L)==1) %>% which %>% length, 12953)
+  L <- bodyLength(body_img, -1.07)
+  expect_equal((dilBodies(body_img, L)==1) %>% which %>% length, 12563)
 })
 
 #gLegLandmarks + simpleCont + coordsAsImg + contourTurns + overlapPoints + 
