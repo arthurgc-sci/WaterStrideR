@@ -17,7 +17,8 @@ gGerrisPlot(
   inser,
   clean_base_path,
   body_L_pts,
-  body_length
+  body_length,
+  df_sw = NA
 )
 }
 \arguments{
@@ -52,6 +53,9 @@ gPipeline()}
 gPipeline()}
 
 \item{body_length}{Similar to the internal variable of the same name in
+gPipeline()}
+
+\item{df_sw}{Similar to the internal variable of the same name in
 gPipeline()}
 }
 \description{

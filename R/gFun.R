@@ -810,12 +810,14 @@ gMeasureLeg <- function(landmarks, scale){
 #'   gPipeline()
 #' @param body_length Similar to the internal variable of the same name in
 #'   gPipeline()
+#' @param df_sw Similar to the internal variable of the same name in
+#'   gPipeline() 
 #'
 #' @importFrom graphics lines
 #' @export
 gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
                         leg_lm, leg_size, inser, clean_base_path,
-                        body_L_pts, body_length){
+                        body_L_pts, body_length, df_sw = NA){
   legend_err <- c()
   full_coords <- full[[i]] %>% imgAsCoords
   body_coords <- body[[i]]
@@ -913,6 +915,28 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
          cex = c(2, 1),
          text.font = c(11, 11),
          bg = NA)
+  if(all(!is.na(df_sw))){ #sex - wing text
+    if (is.na(df_sw$sex[i])) {
+      sexi <- "?"      
+      colsex <- "red"
+    } else {
+      sexi <- ifelse(df_sw$sex[i] == "F", "female", "male")
+      colsex <- ifelse(df_sw$sex[i] == "F", "#c20054", "#0054c2")
+    }
+    if (is.na(df_sw$wing[i])) {
+      wingi <- "?"
+      colwing <- "red"
+    } else {
+      is_winged <- df_sw$wing[i] == "1" 
+      wingi <- if(is_winged) "winged" else "no wings"
+      colwing <- if(is_winged) "black" else "gray70"
+    }
+    legend("bottomright",
+           legend = c(sexi, wingi),
+           bty = "n", adj = 1,
+           text.col = c(colsex, colwing),
+           cex = 1, text.font = 11, bg = NA)
+  }
 }
 
 #' Re-format output of gMeasureLeg for easy inclusion in dataframe
