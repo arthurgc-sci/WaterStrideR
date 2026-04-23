@@ -155,7 +155,7 @@ gDirection <- function(body, dil_cont, inter_idx, el_angle, viz = TRUE){
     warning("Body direction LDA prediction feature build failed, returning NAs")
     return(rep(NA, length(el_angle)))
   }
-  pred <- predict(lda_mod, newdata = as.data.frame(feat_ori))
+  pred <- suppressWarnings(predict(lda_mod, newdata = as.data.frame(feat_ori)))
   to_redirect <- ifelse(pred$class=="R", 1, 0) #Correct orientation
   ang <- ((unlist(el_angle) + to_redirect*pi) %% (2*pi)) - pi
   conf_pred <- pred$posterior > 0.95 #Confidence filter

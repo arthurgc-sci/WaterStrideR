@@ -654,3 +654,13 @@ diamondKern <- function(sz, msg=TRUE){
   im <- outer(1:sz, 1:sz, function(i,j) as.integer(abs(i-mid)+abs(j-mid) <= mid-1))
   return(im)
 }
+
+#' Checks if elements of a list are all 
+#' 
+#' @param l the list to be checked
+okImList <- function(l){
+  all(sapply(l, function(x){
+    imager::is.cimg(x) | imager::is.pixset(x) | (length(x) == 1 && is.na(x))
+  }))
+}
+

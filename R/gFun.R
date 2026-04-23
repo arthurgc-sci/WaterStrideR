@@ -169,11 +169,10 @@ gCleanBin <- function(l_img_bin, l_body_bin, centroid,
       stop("l_img_bin must be a c.img or list of c.img") #error handling
     }
   } else { #if it is a list, check the content
-    if(!imager::is.cimg(l_img_bin[[1]]) & !imager::is.pixset(l_img_bin[[1]])) {
-      stop("l_img_bin must be a c.img or list of c.img") #error handling
+    if(!okImList(l_img_bin) | !okImList(l_body_bin)) {
+      stop("l_img_bin and l_body_bin must be c.img or list of c.img")
     }
   }
-
   if(is.list(l_img_bin)){ #vectorization
     pb <- progress::progress_bar$new(total = length(l_img_bin))
     res <- mapply(function(img_bin, body_bin, cen){
