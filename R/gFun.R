@@ -914,7 +914,7 @@ gGerrisPlot <- function(i, full, body, cen, dilcont, ang, legs,
          cex = c(2, 1),
          text.font = c(11, 11),
          bg = NA)
-  if(all(!is.na(df_sw))){ #sex - wing text
+  if(any(!is.na(df_sw))){ #sex - wing text
     if (is.na(df_sw$sex[i])) {
       sexi <- "?"      
       colsex <- "red"

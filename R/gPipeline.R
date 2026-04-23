@@ -189,7 +189,7 @@ gPipeline <- function(# INPUT
   if(predict_sex_wing){
     message("| \n8 - Sex and wing prediction")
     df_sw <- gPredict(body = clean_body, angle = ang)
-  }
+  } else df_sw <- NA
   
   #OUTPUTS
   clean_base_path <- sub("\\.(jpe?g|tif|png|bmp|gif|jpg)$", "",
@@ -223,7 +223,7 @@ gPipeline <- function(# INPUT
       function(){ #save arguments to be called later
         gGerrisPlot(i, full, body, cen, dilcont, ang, legs,
                     leg_lm, leg_size, inser, clean_base_path,
-                    body_L_pts, body_length)
+                    body_L_pts, body_length, df_sw)
       }
     })
     # Write plots and dataframe
