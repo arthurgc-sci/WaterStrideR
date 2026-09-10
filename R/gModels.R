@@ -192,17 +192,26 @@ gDirection <- function(body, dil_cont, inter_idx, el_angle, viz = TRUE){
 gPredict <- function(body, angle){
   if(length(body)==1 && is.list(body)) body <- body[[1]]
   if(is.list(angle)) angle <- unlist(angle)
-  #Preprocessing
-  outs_rs <- gNorm(body = body, ang = angle - pi, resamp = 100) #trained on reversed angles
-  pca_mod <- loadModel("PCAbio_mini")
-  n_harm <- nrow(pca_mod$rotation)/4 #number of EFA harmonics for the PCA
-  efa <- scoresEFA(outs_rs, nb_h = n_harm, resamp = 100)
-  pred_pca <- predict(pca_mod, newdata = efa$coe)
-  #Prediction
-  lda_mod <- loadModel("LDAbio")
-  lda_names <- colnames(lda_mod$means)
-  n_comp <- sum(grepl("PC", lda_names))
-  pred <- predict(lda_mod, newdata = as.data.frame(pred_pca[,1:n_comp, drop = FALSE]))
+  #1 preprocessing
+  norm_body <- normBody(body, angle)
+  efa <- scoresEFA(norm_body, nb_h=12, resamp=100)
+  #2 run models
+  pca_mod2 <- loadModel("PCAbio_mini")
+  lda_mod2 <- loadModel("LDAbio")
+  pred_pca <- predict(pca_mod2, newdata = efa$coe)
+  pred <- predict(lda_mod2, newdata = as.data.frame(pred_pca[,1:6, drop = FALSE]))
+  #3 format
+  formatBioLDA(pred, angle)
+}
+
+#' Make sex-wing LDA output understandable
+#' 
+#' Separates sex and wing probability from raw LDA output.
+#' 
+#' @param pred output of predict() on WaterStrideR's LDA model
+#' @param angle Vector of orientation angle of individuals.
+#' Number of non-NA values should match the number of predictions.
+formatBioLDA <- function(pred, angle){
   split_pred <- strsplit(as.character(pred$class), split="[.]") #format
   df_pred <- do.call(rbind, split_pred)
   #Confidence

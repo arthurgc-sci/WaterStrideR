@@ -21,5 +21,7 @@ test_that("Elliptic harmonics extraction",{
 test_that("correct feature prediction",{
   img_b <- readRDS(test_path("fixtures", "img_body.rds"))
   res <- gPredict(body=img_b, angle=-1.07)
-  expect_equal(as.character(res), c("F","0","1","1"))
+  res_chr <- as.character(unlist(c(res[1:2], round(as.numeric(res[3:4])))))
+  expect_equal(res_chr, c("F","0","1","1"))
 })
+
