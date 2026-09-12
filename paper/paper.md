@@ -28,7 +28,7 @@ bibliography: paper.bib
 
 # Summary
 
-Recent advances in omics data acquisition allow for unprecedented characterization of individual organisms at the molecular scale [@dai_advances_2022], increasing the need for high-throughput phenotyping approaches to generate complementary organism-level datasets [@houle_phenomics_2010]. However, deep learning-based methods can require extensive morphological training datasets, while imposing limits on transparency and tunability [@omahony_deep_2020]. `WaterStrideR` addresses these challenges through a transparent, tunable pipeline combining traditional computer vision with statistical modelling. Given photographs in which insects are contrasted against a lighter background, this package enables automated extraction of biological traits associated with growth, reproduction, and fighting behaviour.
+Recent advances in omics data acquisition allow for unprecedented characterization of individual organisms at the molecular scale [@dai_advances_2022], increasing the need for high-throughput phenotyping approaches to generate complementary organism-level datasets [@houle_phenomics_2010]. However, deep learning-based methods can require extensive morphological training datasets, while imposing limits on transparency and tunability [@omahony_deep_2020]. `WaterStrideR` addresses these challenges through a transparent, tunable pipeline combining traditional computer vision with statistical modelling and supervised classification. Given photographs in which insects are contrasted against a lighter background, this package enables automated extraction of biological traits associated with growth, reproduction, and fighting behaviour.
  
 # Statement of need
 
@@ -84,7 +84,7 @@ WaterStrideR implements a hierarchical segmentation pipeline combining tradition
 - Wing: 99.56% prediction accuracy on 249 individuals.
 
 ## Limitations
-- Overlapping legs cannot be measured. Because hind leg length depends on growth differs between sexes in *Microvelia longipes*, this may introduce sex and size-dependent measurement bias in crowded images where leg overlap is frequent.
+- Because hind leg length differs between sexes in Microvelia longipes, this may introduce sex- and size-dependent measurement bias in crowded images where leg overlap is frequent.
 - The specifics of our leg landmarking implementation makes it unsuitable for species with less than 3 distinguishable hind leg segments.
 - Feature prediction was trained only on our specific data acquisition protocol with default parameters and hence we cannot assure its accuracy if another setup is used. 
 - Individual water striders may occasionally adopt a tilted posture, which can affect feature classification and morphological measurements. Such cases are not automatically detected and must be identified manually using the output figures.

@@ -4,7 +4,7 @@ This package enables automated extraction of biological traits associated with g
 
 #### Main features:
 - For water striders and similar insects: segmentation, landmarking, and measurement of the body and the hind legs segments.
-- For Microvelia longipes: prediction of sex and prediction of presence/absence of wings.
+- For Microvelia longipes: prediction of sex and wing presence.
 - Automatic scale acquisition on images that contain a piece of red graph paper.
 
 ## Requirements
@@ -34,7 +34,7 @@ results <- gRunPipeline(your_path,
                         predict_sex_wing = TRUE) #for Microvelia longipes only
 summary(results)
 ```
-*The above line creates an output folder that will include diagnostic .png figures a .csv file containing the data with prediction of sex and presence of wing. You will first be prompted to perform interactive manual scaling in a pop-up window.*
+*The above line creates an output folder that will include diagnostic .png figures and a .csv file containing the data with prediction of sex and presence of wing. You will first be prompted to perform interactive manual scaling in a pop-up window.*
 
 ## Documentation
 
