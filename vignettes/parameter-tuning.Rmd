@@ -23,7 +23,7 @@ library(WaterStrideR)
 
 ## Introduction
 
-**Parameter tuning is required for \~90% of use cases.** Each
+**Parameter tuning is required in \~90% of use cases.** Each
 acquisition protocol requires calibration to account for differences in
 organism morphology, image resolution, lighting conditions, and camera
 settings.
@@ -40,7 +40,7 @@ settings.
     isolate each processing stage. If needed, get input for these
     functions with `return_everything = TRUE` then `your_results$process_data`.
 
-**If unsure where problems occur, tune parameters in the order presented
+**If unsure where the issue occurs, tune the parameters in the order presented
 below.**
 
 ### Documentation
@@ -54,7 +54,7 @@ below.**
 -   `k.` prefix = **key variable** (most impactful parameters)
 -   `f.` prefix = **filter parameter** (secondary adjustments)
 
-This vignette covers key variables only using the most efficient tuning
+This vignette covers only the key variables using the most efficient tuning
 methods.
 
 ------------------------------------------------------------------------
@@ -70,15 +70,16 @@ methods.
 ```{r eval=FALSE}
 # Load example image
 ex1 <- system.file("extdata", "small_test.jpg", package = "WaterStrideR")
+img1 <- imager::load.image(ex1)
 
 # Test different thresholds
-img_high <- binaryLoad(ex1, threshold = 0.8)
+img_high <- grayThresh(img1, threshold = 0.8)
 plot(img_high)  # Too high: incomplete bodies
 
-img_low <- binaryLoad(ex1, threshold = 0.4)
+img_low <- grayThresh(img1, threshold = 0.4)
 plot(img_low)   # Too low: legs visible and connected to body
 
-img_good <- binaryLoad(ex1, threshold = 0.6)
+img_good <- grayThresh(img1, threshold = 0.6)
 plot(img_good)  # Ideal: clean body separation
 ```
 
@@ -94,7 +95,7 @@ gRunPipeline(..., k.bin_thresh = 0.6)
 
 ### 2. Body Size Range (`k.body_size_px_range`)
 
-**Purpose:** Filter detected objects by size to exclude noise and
+**Purpose:** Filter the detected objects using their size in order to exclude noise and
 non-target objects
 
 **Tuning:**
@@ -102,11 +103,12 @@ non-target objects
 ```{r eval=FALSE}
 # Load and threshold image
 ex1 <- system.file("extdata", "small_test.jpg", package = "WaterStrideR")
-img1 <- binaryLoad(ex1, threshold = 0.6)
+img1 <- imager::load.image(ex1)
+bin1 <- grayThresh(img1, threshold = 0.6)
 
 # Test size filters
-gFastSeg(img1, px_range = c(0, 10e5), viz = TRUE)     # Many small artifacts
-gFastSeg(img1, px_range = c(300, 10e5), viz = TRUE)   # Clean: only bodies remain
+gFastSeg(bin1, px_range = c(1, 10e5), viz = TRUE)     # Many small artifacts
+gFastSeg(bin1, px_range = c(300, 10e5), viz = TRUE)   # Clean: only bodies remain
 ```
 
 **Goal:** Retain all target bodies, exclude background noise
@@ -121,13 +123,19 @@ gRunPipeline(..., k.body_size_px_range = c(300, 10e5))
 
 ### 3. Morphological Cleaning (`k.clean_kernel`)
 
-**Purpose:** Remove small holes and smooth body edges
+**Purpose:** Remove small holes and smooth the body contour
 
 **Tuning:**
 
 ```{r eval=FALSE}
 # Run pipeline with return_everything to access intermediate data
-results <- gRunPipeline(..., return_everything = TRUE)
+ex1 <- system.file("extdata", "small_test.jpg", package = "WaterStrideR")
+results <- gRunPipeline(
+  ex1,
+  k.bin_thresh = 0.6,
+  return_everything = TRUE,
+  write_output = TRUE #do not write outputs in the package's directory
+)
 
 # Visualize cleaned body for individual i
 i <- 5  # Choose an individual to inspect
@@ -136,8 +144,8 @@ plot(results$process_data$body_img[[i]])
 
 **Decision rules:**
 
-- **If holes visible in body:** Increase `k.clean_kernel`
-- **If body shape details lost:** Decrease `k.clean_kernel`
+- **If holes are still visible in body:** Increase `k.clean_kernel`
+- **If body shape details are lost:** Decrease `k.clean_kernel`
 
 **Set parameter:**
 
@@ -149,7 +157,7 @@ gRunPipeline(..., k.clean_kernel = 3)  # Adjust as needed
 
 ### 4. Crop Size (`k.crop_size_factor`)
 
-**Purpose:** Define square region around body to capture legs
+**Purpose:** Define a square region around the body that includes the legs
 
 **Tuning:**
 
@@ -161,7 +169,7 @@ plot(results$process_data$full[[i]])
 
 **Decision rule:**
 
-- **If legs extend beyond crop:** Increase `k.crop_size_factor`
+- **If legs extend beyond the crop:** Increase `k.crop_size_factor`
 
 **Set parameter:**
 
@@ -175,7 +183,7 @@ gRunPipeline(..., k.crop_size_factor = 2.5)  # Adjust as needed
 
 ### Red Threshold for Ruler Detection (`f.red_thresh`)
 
-**Purpose:** Detect red graph paper based on red color intensity
+**Purpose:** Detect the piece of red graph paper using values of the red channel
 
 **Tuning:**
 
@@ -207,7 +215,7 @@ See `vignette("interpreting-outputs")` for plot location and interpretation.
 
 ### 1. GMM Threshold (`k.gmm_slope_value`)
 
-**Purpose:** Separate legs from background noise using Gaussian Mixture
+**Purpose:** Separate legs from the background noise using a Gaussian Mixture
 Model
 
 **Tuning strategy:**
@@ -220,10 +228,10 @@ results <- gRunPipeline(..., write_output = TRUE, k.gmm_slope_value = -25)
 
 **Decision rules:**
 
-- `k.gmm_slope_value` more positive → **less inclusive** (cleaner but may lose thin legs)
+- `k.gmm_slope_value` more positive → **less inclusive** (cleaner but some thin legs may be lost)
 - `k.gmm_slope_value` more negative → **more inclusive** (captures more legs but adds noise)
 
-**Goal:** Full connected legs with minimal background noise
+**Goal:** Fully connected legs with minimal background noise
 
 **Set parameter:**
 
@@ -235,7 +243,7 @@ gRunPipeline(..., k.gmm_slope_value = -25)  # Adjust based on noise level
 
 ### 2. Body Dilation for Limb Separation (`k.body_dilation_ratio`)
 
-**Purpose:** Expand body contour to intersect legs at their base for
+**Purpose:** Expand the body contour to intersect legs at their base for
 separation
 
 **Tuning strategy:**
@@ -251,8 +259,8 @@ results <- gRunPipeline(..., write_output = TRUE, k.body_dilation_ratio = 0.3)
 Decrease `k.body_dilation_ratio` - **Contour doesn't reach leg bases:**
 Increase `k.body_dilation_ratio`
 
-**Goal:** Intersect legs at their base without cutting into body
-segments (except rearmost appendages, which are tolerated)
+**Goal:** Adjust the size of the dilated contour so that it intersects legs at their
+bases without intersecting body segments (except rearmost appendages, which are tolerated)
 
 **Set parameter:**
 
@@ -273,7 +281,7 @@ with visualization.**
 # Run pipeline with full data
 results <- gRunPipeline(..., return_everything = TRUE)
 
-# Select individual and leg side to inspect
+# Select individual and which side to inspect
 i <- 5
 side <- "right"  # or "left"
 
@@ -299,7 +307,7 @@ knitr::include_graphics("ex_img/contpeaks.png")
 
 ### 1. Angle Search Window (`k.leglm_search_w`)
 
-**Purpose:** Define window range to detecting joint angle variations (require scaling with resolution)
+**Purpose:** Define the scale at which leg contour angles are computed. This parameter represents a number of points and may need to be adjusted for images with different resolutions.
 
 **Diagnostic plot:** "Contour angle variation"
 
@@ -318,7 +326,7 @@ gRunPipeline(..., k.leglm_search_w = 6)
 
 ### 2. Spline Degrees of Freedom (`k.leglm_splines_df`)
 
-**Purpose:** Smooth angle profile to identify joint peaks
+**Purpose:** Smooth the variation in angle along the leg to facilitate peak detection
 
 **Diagnostic plot:** "Splines and peak fitting"
 
@@ -337,7 +345,8 @@ gRunPipeline(..., k.leglm_splines_df = 30)  # Typical range: 25-35
 ------------------------------------------------------------------------
 
 ## Complete Tuning Example
-**Note**: Might be a bit slow due to larger file
+**Note**: Might be a bit slow due to the file being large for a single individual
+compared to the example provided in `vignette("getting-started")`
 
 ```{r eval=FALSE}
 # After tuning all parameters, run full pipeline:
@@ -378,5 +387,5 @@ For difficult tuning cases:
 
 - Open a GitHub Issue with example images and current parameters
 - Include details about your organism and imaging setup
-- Describe which processing step is failing
+- Describe which processing step is creating an issue
 

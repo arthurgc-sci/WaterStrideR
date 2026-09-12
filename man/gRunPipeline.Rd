@@ -7,7 +7,11 @@
 gRunPipeline(img_path, return_df = TRUE, ...)
 }
 \arguments{
-\item{img_path}{image path or vector of image paths to analyze}
+\item{img_path}{Either:
+\itemize{
+\item Single image path (jpeg|jpg|tif|png|bmp|gif)
+\item Path to a folder containing images
+}}
 
 \item{return_df}{logical to return the output dataframe}
 

@@ -19,20 +19,18 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-`WaterStrideR` provides automated morphological measurements for water
-striders and similar arthropods. The package can fulfill three main
-purposes, depending on your data type and research needs:
+`WaterStrideR` provides tools for the automated analysis of group images of 
+water striders and similar arthropods. The package can fulfill three main
+purposes, depending on your data and research needs:
 
-1.  **Leg segmentation and body measurements** - Extract hind leg
+1.  **Body/Leg segmentation and measurements** - Extract hind leg
     measurements, body dimensions, and individual positions
-2.  **Sex and wing prediction** - Classify sex and wing presence in
+2.  **Sex and wing prediction** - Predict sex and wing presence in
     *Microvelia longipes* (trained models)
-3.  **Automatic scaling** - Convert pixel measurements to real-world
-    units using red graph paper
+3.  **Automatic scaling** - If the image contains a piece of red graph paper, 
+the latter is segmented and used to compute a scale automatically.
 
-**Important:** All features depend on standardized image acquisition.
-This package is best suited for high-throughput phenotyping where you
-can maintain consistent imaging protocols across many individuals.
+**Important:** This protocol of automated analysis requires input data to match certain criteria. This package is best suited for high-throughput phenotyping where you can maintain consistent imaging protocols conditions across many images and individuals.
 
 ## Is WaterStrideR Right for Your Study?
 
@@ -41,12 +39,12 @@ can maintain consistent imaging protocols across many individuals.
 -   2D top-view images are sufficient for leg measurements
 -   You have (or can establish) a standardized imaging setup
 -   You need to process many individuals (batch processing)
--   Target organisms are from Gerroidea or have similar body plans
+-   Your target organisms belong to Gerroidea or have similar body plans
 
 ## Installation
 
 ```{r eval=FALSE}
-#Install 'remotes' package required to for installation from GitHub 
+#Install the 'remotes' package, which is required for the installation from GitHub
 install.packages("remotes")
 
 #Install the package
@@ -59,16 +57,21 @@ library(WaterStrideR)
 
 ## Input Data Requirements
 
-### 1A. Hind Leg Segmentation and Body Measurements
+### 1A. Body and Hind Leg Segmentation and Measurements
 
 **Use case:** Extract morphological measurements from water striders or
 similar arthropods.
 
+**Input path** Either:
+
+-   A path to a single image (jpeg, jpg, tif, png, bmp, gif)
+-   A path path to a folder containing one or more images
+
 ```{r eval=FALSE}
 results <- gRunPipeline(
-  "path/to/images",
-  auto_scale = FALSE,
-  predict_sex_wing = FALSE
+  "path/to/image(s)",
+  auto_scale = FALSE, #red graph paper protocol
+  predict_sex_wing = FALSE #Only for M.longipes
 )
 ```
 Wait until all the steps below are completed:
@@ -94,7 +97,7 @@ Wait until all the steps below are completed:
 **Requirements:**
 
 -   Top-view images with visible legs
--   Contrast between individuals and a lighter background
+-   Contrast between dark individuals and a lighter background
 -   Legs at least 2 pixels thick
 -   Most individuals not overlapping with each other
 
@@ -102,44 +105,46 @@ Wait until all the steps below are completed:
 
 -   Individual detection and position
 -   Body length measurement
--   Femur and tibia length measurements of hind legs
+-   Femur and tibia length measurements for the hind legs
 
 ### 1B. Sex and Wing Detection for *Microvelia longipes*
 
-**Use case:** Predict sex and wing presence using pre-trained
+**Use case:** Predict sex and presence/absence of wings using pre-trained
 classification models.
 
 ```{r eval=FALSE}
 results <- gRunPipeline(
-  "path/to/images",
+  "path/to/image(s)",
   predict_sex_wing = TRUE
 )
 ```
 
-**⚠️ Important:** Models were trained on *M. longipes* images acquired
-following the strict protocol below (Section 2.2). Predictions on images
-from different protocols or species may be unreliable. Use with caution
-and validate results.
+**⚠️ Important:** Models were trained on images of  *M. longipes* acquired
+following the specific protocol described below (Section 2.2). Predictions using 
+images from a different protocol or using a distinct species may be unreliable. 
+Use with caution and cross-validate results.
 
-### 1C. Automatic Scaling
+### 1C. Scaling Method
 
-**Use case:** Convert pixel measurements to millimeters automatically.
+**Use case:** Chose between manual interactive scaling, or automatic scaling if
+a piece of red graph paper of at least 1×1cm is included in your images
 
 ```{r eval=FALSE}
 results <- gRunPipeline(
   "path/to/images",
-  auto_scale = TRUE
+  auto_scale = TRUE #switch to FALSE for interactive manual scaling
 )
 ```
 
 **Requirements:** 
 
-- Include red or orange millimetric graph paper in each image
-- Graph paper must be at the same height as specimens
-- Small squares (1mm) should be distinguishable
+- Include a piece of red or orange millimetric graph paper in each image
+- The graph paper must be within the depth-of-field
+- Small squares (1mm) should be resolved
 - 2cm² of graph paper is sufficient (larger areas reduce performance)
 
-**Tuning:** If ruler detection fails, adjust `f.red_thresh` in `gRunPipeline`.
+**Tuning:** If the ruler detection fails, adjust `f.red_thresh` in 
+`gRunPipeline`.
 
 ## Data Acquisition Protocols
 
@@ -155,6 +160,10 @@ results <- gRunPipeline(
 -   **Resolution:** Legs should be at least 2 pixels thick
 -   **Positioning:** Specimens in natural posture, legs extended when possible
 
+**Note on optical aberrations** WaterStrideR does not correct for optical 
+aberrations. If these distortions affect measurement accuracy, calibration of 
+the camera and optical system may be required.
+
 ### 2.2 Strict Protocol (*M. longipes* and Optimal Performance)
 
 `WaterStrideR` was specifically tuned and validated using the following
@@ -162,7 +171,7 @@ protocol:
 
 **Image specifications:**
 
-- Resolution: 1900-3500 pixels per dimension
+- Resolution: 1900-3500 pixels per dimension (200-250px/cm)
 - File size: 500-900 KB
 - DPI: 300
 - Color depth: 24-bit
@@ -183,8 +192,9 @@ protocol:
 knitr::include_graphics("ex_img/big_example.jpg")
 ```
 
-**Note:** While this strict protocol ensures optimal performance,
-`WaterStrideR` can work with other setups after proper parameter tuning.
+**Note:** While this protocol ensures optimal performance,
+`WaterStrideR` may work with images from other setups owing ot proper parameter 
+tuning.
 
 See the **Parameter Tuning vignette** for detailed instructions:
 
@@ -198,18 +208,17 @@ To enable automatic scale detection:
 
 1.  **Add graph paper:** Place a small piece of red or orange
     millimetric graph paper in the frame
-2.  **Size:** 2cm² is sufficient and recommended (larger areas slow
-    processing)
-3.  **Position:** Ensure graph paper is at the same focal plane as
-    specimens
-4.  **Visibility:** 1mm grid squares must be distinguishable
+2.  **Size:** 2cm² is sufficient and recommended (larger pieces slow
+    processing for a marginal increase in achieved precision)
+3.  **Position:** Ensure graph paper and specimens are within the depth-of-field
+4.  **Visibility:** 1mm grid squares must be resolved (distinguishable)
 5.  **Color:** Red or orange paper works best (high red channel value)
 
 **Enable in pipeline:**
 
 ```{r eval=FALSE}
 results <- gRunPipeline(
-  "path/to/images",
+  "path/to/image(s)",
   auto_scale = TRUE,
   f.red_thresh = 0.5  # Adjust if ruler detection fails
 )
@@ -230,8 +239,8 @@ cases.
 Before processing your full dataset, calibrate `WaterStrideR` for your
 specific:
 
-- Organism morphology
-- Image type
+- Organism's morphology
+- Imaging conditions
 
 See the **Parameter Tuning vignette** for detailed instructions:
 
@@ -247,29 +256,27 @@ Process a single image or batch of images:
 # Single image
 results <- gRunPipeline(
   "path/to/image.jpg",
-  write_output = TRUE,
-  return_df = TRUE
+  write_output = TRUE
 )
 
 # Batch processing (folder of images)
 results <- gRunPipeline(
   "path/to/folder/",
-  write_output = TRUE,
-  return_df = TRUE
+  write_output = TRUE
 )
 ```
 
 **Parameters:**
 
-- `write_output = TRUE`: Saves graphical outputs for
-quality control
 - `return_df = TRUE`: Returns a data frame with
-measurements
+measurements, this is the default
+- `write_output = TRUE`: Saves graphical outputs as .png files for quality 
+control and the results data frame as a .csv file
 
 ### Step 4: Validate Results
 
 `WaterStrideR` creates graphical outputs linked to the measurement data
-frame, allowing easy quality checks.
+frame, allowing for easy quality checks.
 
 See the **Interpreting Outputs vignette** for details:
 

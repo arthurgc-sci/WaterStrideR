@@ -357,7 +357,9 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
 #' Checks if an input can be valid for either gPipline or gMultiPipeline, and
 #' use the appropriate function, or return a specific error message
 #'
-#' @param img_path image path or vector of image paths to analyze
+#' @param img_path Either:
+#' - Single image path (jpeg|jpg|tif|png|bmp|gif)
+#' - Path to a folder containing images
 #' @param return_df logical to return the output dataframe
 #' @param ... Additional arguments passed to `gPipeline()`
 #'

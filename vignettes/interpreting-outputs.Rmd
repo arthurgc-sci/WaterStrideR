@@ -20,13 +20,15 @@ library(WaterStrideR)
 
 ## Introduction
 
-WaterStrideR produces three types of outputs to help you extract measurements and validate results:
+WaterStrideR produces three types of outputs to help you with extracting 
+measurements and validating your results:
 
 1. **R data frame** - Measurement data returned directly in R
-2. **Folder outputs** - CSV file and graphical quality control plots
+2. **Folder outputs** - CSV file and graphical plots for quality control
 3. **Advanced outputs** - Intermediate processing data for in depth analysis
 
-This vignette explains how to interpret each output type and use them for quality control.
+This vignette explains how to interpret each output type and how to use them for
+quality control.
 
 ## Prerequisites
 
@@ -43,8 +45,7 @@ Set `return_df = TRUE` to return measurement data directly in R:
 
 ```{r eval=FALSE}
 results <- gRunPipeline( #Run pipeline
-  "path/to/images",
-  return_df = TRUE
+  "path/to/image(s)"
 )
 df <- results$df #Extract the dataframe
 ```
@@ -63,8 +64,8 @@ results <- gRunPipeline(
   k.body_dilation_ratio = 0.2,
   k.bin_thresh = 0.6
 )
-df <- results$df
-df #Explore the data frame
+df_demo <- results$df
+df_demo #Explore the data frame
 ```
 
 ### 1A. Body Size and Leg Segmentation Columns
@@ -84,16 +85,16 @@ df
 
 - `img` - Source image name
 - `i` - Individual identifier within the image
-- `L_body` - Body length (using elongation axis)
+- `L_body` - Body length (along the detected antero-posterior axis)
 - `error_margin` - If `auto_scale = TRUE`: error margin on body length linked to scale computation
-- `left_tibia`, `right_tibia` - Hind leg tibia measurements
-- `left_femur`, `right_femur` - Hind leg re-attached femur measurements
+- `left_tibia`, `right_tibia` - Hind leg's tibia measurements
+- `left_femur`, `right_femur` - Hind leg's femur measurements
 
 **Important notes:**
 
 - **Individual IDs are image-specific:** Each `i` restarts at 1 for each new image
 - **Unique identification:** Use the combination `img + i` to uniquely identify individuals
-- **NA values:** Indicate failed measurements (failed safety check in segmentation or landmarking)
+- **NA values:** Indicate failed measurements (failed safety check during either segmentation or landmarking)
 
 ### 1B. Sex and Wing Prediction Columns
 
@@ -115,9 +116,12 @@ results
 - `wing` - Predicted wing status (1 = winged / 0 = wingless)
 - `winged_prob`, `wingless_prob` - Confidence for each class of wing status
 
-**⚠️ Important:** These predictions are reliable only for *M. longipes* images following the strict acquisition protocol. Low confidence values (<0.90) warrant manual verification.
+**⚠️ Important:** These predictions are reliable only for images of *M. longipes* 
+acquired using the same acquisition protocol as described herein. Low confidence values 
+(<0.90) should encourage you to check manually.
 
-**Note:** If you want sex and wing status prediction, running the entire pipeline is required regardless of your interest in leg measurement.
+**Note:** In the current configuration, of you want sex and wing status prediction, 
+running the entire pipeline is required regardless of your interest in leg measurement.
 
 ## 2. Folder Outputs
 
@@ -184,7 +188,7 @@ directory/
 **Purpose**:
 - Export results for external analysis (Excel, GraphPad, etc.)
 - Archive measurements with timestamp
-- Connect measurements to corresponding plots
+- Link measurements to corresponding plots
 
 **Usage**:
 ```{r eval=FALSE}
@@ -212,17 +216,17 @@ knitr::include_graphics("ex_img/out_detection.png")
 
 **Visual elements:**
 
-- Small white crosses: individual's centroid
-- Light blue numbers: Individual IDs (matching data frame `i` column)
+- Small white crosses: individuals centroids (center of gravity)
+- Light blue numbers: Individual IDs (matching the `i` column of the data frame)
 - Bottom left in dark orange: Scale
 
-**Purpose:**
+**Quality checks:**
 
 - **Identify false positives:** Cross and numeric id on random objects
 - **Identify false negatives:** Individuals without cross or numeric id
 - **Validate scaling:** Check ruler detection and scale bar
 - **Detect spatial biases:** Are certain image regions problematic?
-- **Troubleshooting:** Can be used for scale detection and individual detection parameters tuning.
+- **Troubleshooting:** May be used for tuning the parameters of scale detection and individual detection.
 See related vignette:
 ```{r eval=FALSE}
 vignette("parameter-tuning", package = "WaterStrideR")
@@ -242,21 +246,21 @@ knitr::include_graphics("ex_img/out_ind.png")
 - **Light gray region:** Segmented complete individual
 - **Dark gray region:** Segmented body
 - **Black region:** Segmented hind legs
-- **Pink arrow:** Body orientation from body centroid (anterior direction)
+- **Pink arrow:** Body orientation from body centroid (to the anterior direction)
 - **Light orange lines:** Femur measurements with length values
 - **Light orange point:** Knee landmark
 - **Dark orange lines:** Tibia measurements with length values
 - **Dark orange point:** Ankle landmark
 - **Purple dotted outline:** Dilated body contour (used for orientation and leg detection)
 
-**Purpose:**
+**Quality checks:**
 
-- **Validate segmentation quality:** Are body and legs properly separated?
-- **Check orientation accuracy:** Does pink arrow point anterior?
+- **Validate segmentation quality:** Are body and legs properly segmented?
+- **Check orientation accuracy:** Does pink arrow point to the anterior?
 - **Verify measurements:** Do segment lengths match visual appearance?
 - **Link to data frame:** Use image name and `i` identifier to match rows
 - **Quality control:** Identify individuals requiring manual correction or removal
-- **Troubleshooting:** Can be used for leg detection and landmarking parameters tuning.
+- **Troubleshooting:** May be used for tuning the parameters of scale detection and individual detection
 See related vignette:
 ```{r eval=FALSE}
 vignette("parameter-tuning", package = "WaterStrideR")
@@ -293,19 +297,18 @@ names(results)
 **Intermediate outputs include (but not limited to):**
 
 -`body_img`: Segmented and cropped body image
--`angle`: Orientation angle (rad)
+-`angle`: Orientation angle
 -`legs`: Hind legs points
--`dilcont`: Dilated contour
+-`dilcont`: Dilated contour (sorted list of pixels)
 -`inter_idx`: Indices in `dilcont` of intersections of `dilcont` with the full segmented individual
 -`body_centroids`: Body centroid coordinates
--`scale`: Scale and error margin if `auto_scale = TRUE`
+-`scale`: Scaling factor, and error margin if `auto_scale = TRUE`
 
 ### Use Cases
 
 These outputs were not designed with a specific purpose in mind. We chose to include them for multiple reasons:
 
-- **Extraction of data** not deemed relevant enough for inclusion in the main result data frame 
-(scale value, orientation, body centroid...)
+- **Extraction of additional information** not deemed essential for inclusion in the main results data frame, such as the scaling factor, orientation, or body centroid. These variables may be useful for specific applications but are excluded from the default output to avoid unnecessary bloat.
 - **Custom analysis** and method development or refinement
 - **Debugging** through mid-step checks to avoid manually rebuilding the whole pipeline
 - **Parameter tuning**. Many functions used in the pipeline have their own visualization option 
