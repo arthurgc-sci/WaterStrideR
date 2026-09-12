@@ -1,9 +1,11 @@
 ## WaterStrideR: a R package for morphological feature extraction on Gerroidea-like arthropods
-Allows for acquisition of biologically relevant water strider morphological features from large amounts of image data directly in R. Treatment of pictures with lots of individuals in scientific contexts, e.g. laboratory breeding experiments or large field data.
+
+This package enables automated extraction of biological traits associated with growth, reproduction, and fighting behaviour in water striders from large amounts image data directly in R. The entire process is fully integrated in a single tunable pipeline combining traditional computer vision, statistical modelling and supervised classification.
+
 #### Main features:
-- For water striders or similar insects: hind leg segmentation and measurements with joint landmarking, using classic computer vision methods.
-- For Microvelia longipes: sex and presence of wings prediction, using machine learning methods.
-- Automatic scale acquisition on images following simple red graph paper protocol.
+- For water striders and similar insects: segmentation, landmarking, and measurement of the body and the hind legs segments.
+- For Microvelia longipes: prediction of sex and prediction of presence/absence of wings.
+- Automatic scale acquisition on images that contain a piece of red graph paper.
 
 ## Requirements
 This package requires **R ≥ 3.5** and the following packages:
@@ -12,7 +14,7 @@ This package requires **R ≥ 3.5** and the following packages:
 - **Suggests:** knitr, rmarkdown, testthat (≥ 3.0.0)
 
 ## Installing
-WaterStrideR is available on **GitHub**. To install, you will first need to have the **remotes** package installed. Run all the commands below for a first installation:
+WaterStrideR is available on **GitHub**. To install it, you will first need to have the **remotes** package installed. Run all the commands below for a first installation:
 
 ```console
 install.packages("remotes")
@@ -29,14 +31,14 @@ results <- gRunPipeline(your_path,
                         write_output = TRUE,
                         return_df = TRUE,
                         auto_scale = FALSE,
-                        predict_sex_wing = FALSE)
+                        predict_sex_wing = TRUE) #for Microvelia longipes only
 summary(results)
 ```
-*Options for creation of an output folder including diagnostic figures and data as .csv file, manual interactive scaling, and no prediction of sex and presence of wings*
+*The above line creates an output folder that will include diagnostic .png figures a .csv file containing the data with prediction of sex and presence of wing. You will first be prompted to perform interactive manual scaling in a pop-up window.*
 
 ## Documentation
 
-Workflow, use case, and tuning are detailed in the packages vignettes:
+Workflow, use case, and tuning are detailed in the vignettes of the package:
 #### Quickstart guide, setup and installation:
 ```R
 vignette("getting_started", package = "WaterStrideR")
@@ -51,8 +53,7 @@ vignette("parameter_tuning", package = "WaterStrideR")
 ```
 
 ## Contributing
-Contributions are welcome! However, this package is provided as-is for a specific research use case.  
-Bug reports and pull requests are welcome but may not be actively reviewed or integrated.
+Contributions are welcome. WaterStrideR was initially developed for a specific species and imaging setup, but it may provide a very useful starting point for other high-throughput arthropod phenotyping projects. If you are working with large image datasets and would like to use WaterStrideR as a starting point for developing a mass-phenotyping pipeline, please get in touch!
 - Read contribution guidelines [here](https://github.com/arthurgc-sci/WaterStrideR/tree/main/CONTRIBUTING.md)
 
 ## Testing
@@ -73,6 +74,6 @@ If you use WaterStrideR in your research, please cite:
 
 ## Acknowledgments
 
-Development of this package was supported by Abderrahman Khila from Institut de Génomique Fonctionnelle de Lyon (IGFL), ENS de Lyon.
+Development of this package was supported by Nicolas Goudemand and Abderrahman Khila, both from IGFL, ENS de Lyon.
 Example datasets were provided by Abderrahman Khila (IGFL) and Claudia Pruvôt (IGFL).
 
