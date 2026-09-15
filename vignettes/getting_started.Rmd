@@ -65,7 +65,7 @@ similar arthropods.
 **Input path** Either:
 
 -   A path to a single image (jpeg, jpg, tif, png, bmp, gif)
--   A path path to a folder containing one or more images
+-   A path to a folder containing one or more images
 
 ```{r eval=FALSE}
 results <- gRunPipeline(
@@ -161,8 +161,8 @@ results <- gRunPipeline(
 -   **Positioning:** Specimens in natural posture, legs extended when possible
 
 **Note on optical aberrations** WaterStrideR does not correct for optical 
-aberrations. If these distortions affect measurement accuracy, calibration of 
-the camera and optical system may be required.
+aberrations. If these distortions affect measurement accuracy, of the camera or 
+of the optical setup in general may be needed.
 
 ### 2.2 Strict Protocol (*M. longipes* and Optimal Performance)
 
@@ -193,7 +193,7 @@ knitr::include_graphics("ex_img/big_example.jpg")
 ```
 
 **Note:** While this protocol ensures optimal performance,
-`WaterStrideR` may work with images from other setups owing ot proper parameter 
+`WaterStrideR` may work with images from other setups owing to proper parameter 
 tuning.
 
 See the **Parameter Tuning vignette** for detailed instructions:

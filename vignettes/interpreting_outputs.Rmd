@@ -294,7 +294,7 @@ names(results)
 
 ### Available Data
 
-**Intermediate outputs include (but not limited to):**
+**Intermediate outputs include (but are not limited to):**
 
 -`body_img`: Segmented and cropped body image
 -`angle`: Orientation angle
