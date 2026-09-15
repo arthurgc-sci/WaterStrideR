@@ -84,10 +84,15 @@ WaterStrideR implements a hierarchical segmentation pipeline combining tradition
 - Wing: 99.56% prediction accuracy on 249 individuals.
 
 ## Limitations
+
 - Because hind leg length differs between sexes in Microvelia longipes, this may introduce sex- and size-dependent measurement bias in crowded images where leg overlap is frequent.
 - The specifics of our leg landmarking implementation makes it unsuitable for species with less than 3 distinguishable hind leg segments.
 - Feature prediction was trained only on our specific data acquisition protocol with default parameters and hence we cannot assure its accuracy if another setup is used. 
 - Individual water striders may occasionally adopt a tilted posture, which can affect feature classification and morphological measurements. Such cases are not automatically detected and must be identified manually using the output figures.
+
+## AI Usage Disclosure
+
+Generative AI tools (various versions of Claude and Gemini ranging from 2024 to 2026) were used during development to assist with code debugging. AI-generated solutions were always manually tested, reviewed and rewritten by the author. These tools were not used to design the proposed pipeline and write any documentation, including the present paper. 
 
 # Acknowledgements
 
