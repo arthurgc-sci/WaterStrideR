@@ -185,6 +185,9 @@ tilesUnitDist <- function(tiles_centroid, alpha=0.05, viz=FALSE){
 #' alpha level for confidence interval
 #' @param viz logical. visualization option
 #' @param msg logical. console message option
+#' 
+#' @return Estimated image scale and error in pixels/micrometer
+#' 
 #' @export
 redRulerScale <- function(img, red_thresh, alpha_confidence=0.05,
                           viz=FALSE, msg=TRUE){

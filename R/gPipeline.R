@@ -91,6 +91,7 @@ gPipeline <- function(# INPUT
   f.leg_n_inflexions = c(5, 7),
   f.segment_lengths_range = c(.15, .6)
 ){
+  t0 <- Sys.time()
   message("1 - Loading and segmenting image")
   base_img <- imager::load.image(img_path)
   #Loading and Binarizing image
@@ -206,7 +207,7 @@ gPipeline <- function(# INPUT
                        right_tibia = leg_res$left_tibia %>% round,
                        left_femur = leg_res$right_femur %>% round,
                        right_femur = leg_res$left_femur %>% round)
-  legText(df_out)
+  leg_text <- legText(df_out)
   if(predict_sex_wing) df_out <- cbind(df_out, df_sw) #add columns
   
   if(write_output){
@@ -234,6 +235,15 @@ gPipeline <- function(# INPUT
   output <- list()
   if(return_df){
     output[["df"]] <- df_out
+    output[["diagnostics"]] <- list(
+      runtime = Sys.time()-t0, #runtime for the image
+      leg_ratio = leg_text$perf_leg, #%of legs measured
+      indleg_ratio = leg_text$perf_ind, #%of individuals with at least one leg
+      resolution_pxmm = scale[1]*1000, #px/mm
+      precision_pxmm = ifelse(auto_scale, scale[2]*1000 , NA)
+    )
+    as.numeric(t_run, units = "secs")
+    
   }
   if(return_everything){ #return mid-pipeline data (for model training or diagnostics for example)
     output[["process_data"]] <- list(body_img = clean_body,
@@ -306,14 +316,16 @@ gWritePipeline <- function(img_path, i_plots, detection_plot,
 #'
 #' @param img_path_list a vector or list or valid image paths
 #' @param return_df logical, to return the concatenated gPipeline dataframe
+#' @param diag logical, to return the concatenated gPipeline diagnostics
 #' @param ... Additional arguments passed to `gPipeline()`
 #' 
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
-gMultiPipeline <- function(img_path_list, return_df, ...){
+gMultiPipeline <- function(img_path_list, return_df, diag, ...){
   img_path_length <- length(img_path_list)
   df_out_list <- list()
+  if(diag) diag_out_list <- list()
   dots <- list(...) #as list to allow filtering of passed args
   if(any(c("write_output","single_write","return_df") %in% ...names())){
     message("Note: The arguments 'write_output', 'single_write', and 'return_df' passed via '...' were ignored. These are managed internally by gMultiPipeline.")
@@ -336,6 +348,7 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
           ), dots) #passed args
       )
       if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
+      if(diag) diag_out_list[[clean_base_path]] <- pipe_result[["diagnostics"]]
     }, error = function(e) { #gPipeline full crash handling, probably needs debugging
       warning(paste("gPipeline Failure on",clean_base_path,
                     " no result will be returned for this image.\n",e$message))
@@ -348,7 +361,16 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
   df_out_path <- paste0(dir_name, "/out_", main_dir, "/data_", main_dir, ".csv") #output directory name
   write.table(multi_df_out, file = df_out_path, row.names = FALSE, sep=";")
   if(return_df){
-    return(multi_df_out)
+    if(diag){
+      return(
+        list(
+          df=multi_df_out,
+          diagnostics=diag_out_list
+        )
+      )
+    } else{
+      return(multi_df_out)
+    }
   }
 }
 
@@ -362,11 +384,12 @@ gMultiPipeline <- function(img_path_list, return_df, ...){
 #' - Path to a folder containing images
 #' @param return_df logical to return the output dataframe
 #' @param ... Additional arguments passed to `gPipeline()`
+#' @param diag A boolean. If TRUE, return diagnostics related to each image run 
 #'
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
-gRunPipeline <- function(img_path, return_df=TRUE, ...){
+gRunPipeline <- function(img_path, return_df=TRUE, diag=TRUE, ...){
   t0 <- Sys.time()
   #1 check if path is an image
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
@@ -394,7 +417,7 @@ gRunPipeline <- function(img_path, return_df=TRUE, ...){
           message("Running pipeline for the single image found in directory")
           return(gPipeline(lf, return_df=return_df, ...))
         } else { #if multiple images are found in dir
-          return(gMultiPipeline(lf, return_df=return_df, ...))
+          return(gMultiPipeline(lf, return_df=return_df, diag, ...))
         }
       }
     }
@@ -455,10 +478,11 @@ legText <- function(df){
   lf <- df$left_tibia
   rf <- df$right_tibia
   n <- nrow(df)
-  nof <- sum(is.na(lf)&is.na(rf))
+  nof <- n-sum(is.na(lf)&is.na(rf))
   ratiof <- round((sum(!is.na(lf)) + sum(!is.na(rf)))/(n*.02),1)
   message(
-    paste0("| \n|_ Tibia length measured on at least one leg in ", n-nof, "/",
+    paste0("| \n|_ Tibia length measured on at least one leg in ", nof, "/",
            n, " individuals.\n|_ Measured tibias ratio: ", ratiof, "%")
   )
+  return(list(perf_ind = (nof/n)*100, perf_leg = ratiof))
 }
