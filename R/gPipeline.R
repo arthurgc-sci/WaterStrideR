@@ -318,16 +318,15 @@ gWritePipeline <- function(img_path, i_plots, detection_plot,
 #'
 #' @param img_path_list a vector or list or valid image paths
 #' @param return_df logical, to return the concatenated gPipeline dataframe
-#' @param diag logical, to return the concatenated gPipeline diagnostics
 #' @param ... Additional arguments passed to `gPipeline()`
 #' 
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
-gMultiPipeline <- function(img_path_list, return_df, diag, ...){
+gMultiPipeline <- function(img_path_list, return_df, ...){
   img_path_length <- length(img_path_list)
   df_out_list <- list()
-  if(diag) diag_out_list <- list()
+  other_out_list <- list() #TODO
   dots <- list(...) #as list to allow filtering of passed args
   if(any(c("write_output","single_write","return_df") %in% ...names())){
     message("Note: The arguments 'write_output', 'single_write', and 'return_df' passed via '...' were ignored. These are managed internally by gMultiPipeline.")
@@ -350,7 +349,8 @@ gMultiPipeline <- function(img_path_list, return_df, diag, ...){
           ), dots) #passed args
       )
       if(return_df) df_out_list[[clean_base_path]] <- pipe_result[["df"]]
-      if(diag) diag_out_list[[clean_base_path]] <- pipe_result[["diagnostics"]]
+      name_others <- names(pipe_result)[names(pipe_result) != "df"]
+      other_out_list[[clean_base_path]] <- pipe_result[name_others] #TODO
     }, error = function(e) { #gPipeline full crash handling, probably needs debugging
       warning(paste("gPipeline Failure on",clean_base_path,
                     " no result will be returned for this image.\n",e$message))
@@ -363,16 +363,12 @@ gMultiPipeline <- function(img_path_list, return_df, diag, ...){
   df_out_path <- paste0(dir_name, "/out_", main_dir, "/data_", main_dir, ".csv") #output directory name
   write.table(multi_df_out, file = df_out_path, row.names = FALSE, sep=";")
   if(return_df){
-    if(diag){
-      return(
-        list(
-          df=multi_df_out,
-          diagnostics=diag_out_list
-        )
+    return(
+      list(
+        df=multi_df_out,
+        others=other_out_list
       )
-    } else{
-      return(multi_df_out)
-    }
+    )
   }
 }
 
@@ -386,12 +382,11 @@ gMultiPipeline <- function(img_path_list, return_df, diag, ...){
 #' - Path to a folder containing images
 #' @param return_df logical to return the output dataframe
 #' @param ... Additional arguments passed to `gPipeline()`
-#' @param diag A boolean. If TRUE, return diagnostics related to each image run 
 #'
 #' @return A list of results returned by `gPipeline()`.
 #' @seealso [gPipeline()]
 #' @export
-gRunPipeline <- function(img_path, return_df=TRUE, diag=TRUE, ...){
+gRunPipeline <- function(img_path, return_df=TRUE, ...){
   t0 <- Sys.time()
   #1 check if path is an image
   img_pattern <- "\\.(jpe?g|tif|png|bmp|gif|jpg)$"
@@ -419,7 +414,7 @@ gRunPipeline <- function(img_path, return_df=TRUE, diag=TRUE, ...){
           message("Running pipeline for the single image found in directory")
           return(gPipeline(lf, return_df=return_df, ...))
         } else { #if multiple images are found in dir
-          return(gMultiPipeline(lf, return_df=return_df, diag, ...))
+          return(gMultiPipeline(lf, return_df=return_df, ...))
         }
       }
     }
