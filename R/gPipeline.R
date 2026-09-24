@@ -242,6 +242,8 @@ gPipeline <- function(# INPUT
       resolution_pxmm = scale[1]*1000, #px/mm
       precision_pxmm = ifelse(auto_scale, scale[2]*1000 , NA)
     )
+    output[["call"]] <- match.call()
+    output[["version"]] <- packageVersion("WaterStrideR")
     as.numeric(t_run, units = "secs")
     
   }
