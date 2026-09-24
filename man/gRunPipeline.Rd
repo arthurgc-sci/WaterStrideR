@@ -4,7 +4,7 @@
 \alias{gRunPipeline}
 \title{Main method to run gPipeline for one or multiple images in the same directory}
 \usage{
-gRunPipeline(img_path, return_df = TRUE, ...)
+gRunPipeline(img_path, return_df = TRUE, diag = TRUE, ...)
 }
 \arguments{
 \item{img_path}{Either:
@@ -14,6 +14,8 @@ gRunPipeline(img_path, return_df = TRUE, ...)
 }}
 
 \item{return_df}{logical to return the output dataframe}
+
+\item{diag}{A boolean. If TRUE, return diagnostics related to each image run}
 
 \item{...}{Additional arguments passed to \code{gPipeline()}}
 }

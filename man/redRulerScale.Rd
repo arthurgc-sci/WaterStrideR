@@ -25,6 +25,9 @@ alpha level for confidence interval}
 
 \item{msg}{logical. console message option}
 }
+\value{
+Estimated image scale and error in pixels/micrometer
+}
 \description{
 Detect ruler as biggest red label
 }

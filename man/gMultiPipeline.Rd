@@ -4,12 +4,14 @@
 \alias{gMultiPipeline}
 \title{Pipeline iteration for multiple images}
 \usage{
-gMultiPipeline(img_path_list, return_df, ...)
+gMultiPipeline(img_path_list, return_df, diag, ...)
 }
 \arguments{
 \item{img_path_list}{a vector or list or valid image paths}
 
 \item{return_df}{logical, to return the concatenated gPipeline dataframe}
+
+\item{diag}{logical, to return the concatenated gPipeline diagnostics}
 
 \item{...}{Additional arguments passed to \code{gPipeline()}}
 }
