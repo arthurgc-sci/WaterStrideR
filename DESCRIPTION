@@ -1,6 +1,6 @@
 Package: WaterStrideR
 Title: WaterStrideR: An R Package for Automated Morphological Feature Extraction in Semi-Aquatic Arthropods
-Version: 1.4.3
+Version: 1.4.4
 Authors@R: 
     person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre"))
 Description: Image analysis, statistical, logical tools and pipeline for
