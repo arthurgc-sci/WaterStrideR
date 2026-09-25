@@ -570,6 +570,9 @@ gLegLandmarks <- function(leg_coords,
     ankle_pts <- cont_inser[names(ankle_dist) %>% as.numeric, ]
     knee <- apply(knee_pts,2,mean)
     ankle <- apply(ankle_pts,2,mean)
+    if(viz) vizLegLandmarks(cont_inser, inser_thresh, dist_peaks_str,
+                            dist_peaks_rev, dist, knee, ankle, knee_pts,
+                            ankle_pts, peaks_inser)
     segment_lengths <- vapply(list(insertion, ankle), function(pt){  #for safety check
       ((pt -knee)^2 %>% sum %>% abs %>% sqrt)/cont_half_l
     }, numeric(1))
@@ -583,14 +586,13 @@ gLegLandmarks <- function(leg_coords,
     femur_len <- rbind(cont_inser[1,], knee) %>% dist
     tibia_len <- rbind(ankle, knee) %>% dist
     if(any(max(knee_joint_wdth, ankle_joint_wdth) > c(femur_len,tibia_len))){
+      if(msg) message("Found a joint wider than tibia or femur")
       return(NA) #any joint wider than tibia or femur
     }
     if(0 <= -0.6*max(tibia_len,femur_len)+abs(tibia_len-femur_len)){
+      if(msg) message("Found a segment (tibia or femur) smaller than 40% of the other")
       return(NA) #any segment (tibia or femur) smaller than 40% of the other
     }
-    if(viz) vizLegLandmarks(cont_inser, inser_thresh, dist_peaks_str,
-                            dist_peaks_rev, dist, knee, ankle, knee_pts,
-                            ankle_pts, peaks_inser)
     return(data.frame(insertion = cont_inser[1,] %>% unlist,
                       knee = knee, ankle = ankle) %>% t)
   } else { return( NA )}

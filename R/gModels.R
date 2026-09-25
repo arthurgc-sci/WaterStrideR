@@ -38,7 +38,7 @@ normBody <- function(img_bin, ori_angle){
     }
     if(length(ori_angle_c)!=length(img_bin_c)) stop("mismatching lengths for img_bin and ori_angle")
     #vectorized FX
-    res <- mapply(normBody, img_bin_c, ori_angle_c)
+    res <- mapply(normBody, img_bin_c, ori_angle_c, SIMPLIFY = FALSE)
     return(res)
   }
   #safety for single angle-img pair
@@ -243,7 +243,7 @@ formatBioLDA <- function(pred, angle){
 itxFeature <- function(dil, int, ang){
   if (is.data.frame(dil) || is.matrix(dil)) dil <- list(dil) #as list if single
   if (!is.list(int)) int <- list(int)
-  if (length(ang)==1) ang <- list(ang)
+  if (length(ang)==1 & !is.list(ang)) ang <- list(ang)
   rdil <- mapply(function(d, r) as.matrix(d)%*%r, dil,
                  lapply(ang, rotMat), SIMPLIFY = FALSE)
   f1 <- mapply(function(dd,itx){

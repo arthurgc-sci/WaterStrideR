@@ -220,4 +220,5 @@ pipelineScale <- function(img, auto_scale, red_thresh, viz=FALSE){
     scale1 <- getScale(img)
     scale <- c(scale1, NA) #no error margin : not yet implemented here    
   }
+  return(scale)
 }

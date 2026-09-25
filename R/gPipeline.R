@@ -244,7 +244,7 @@ gPipeline <- function(# INPUT
     )
     output[["call"]] <- match.call()
     output[["version"]] <- packageVersion("WaterStrideR")
-    as.numeric(t_run, units = "secs")
+    as.numeric(Sys.time()-t0, units = "secs")
     
   }
   if(return_everything){ #return mid-pipeline data (for model training or diagnostics for example)

@@ -625,7 +625,7 @@ recropImg <- function(img, crop_coords){
 #' @export
 gSubBody <- function(base_body, seg_body){
   if(is.list(base_body) && is.list(seg_body) && length(base_body)==length(seg_body)){
-    res_l <- mapply(gSubBody, base_body, seg_body)
+    res_l <- mapply(gSubBody, base_body, seg_body, SIMPLIFY=FALSE)
     return(res_l)
   }
   #Safety
