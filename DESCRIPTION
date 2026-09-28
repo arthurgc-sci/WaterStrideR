@@ -21,11 +21,13 @@ Imports:
     magrittr,
     MASS,
     mclust,
-    Momocs,
     progress,
     rootSolve,
     stats,
-    utils
+    utils,
+    Momocs (>= 1.4.1)
+Remotes:
+    MomX/Momocs@fca92dc7582c032d91f8d1b7aebbc30482451556
 Suggests: 
     knitr,
     rmarkdown,
