@@ -1,8 +1,8 @@
 Package: WaterStrideR
 Title: WaterStrideR: An R Package for Automated Morphological Feature Extraction in Semi-Aquatic Arthropods
 Version: 1.4.5
-Authors@R: 
-    person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre"))
+Authors@R: c(person("Arthur", "Gairin-Calvo", , "arthur.gairin-calvo@ens-lyon.fr", role = c("aut", "cre")),
+	person("Claudia", "Pruvôt", role = c("ctb", "dtc")))
 Description: Image analysis, statistical, logical tools and pipeline for
     leg measurement, sex and wing prediction of Microvelia longipes
     (Hemiptera, Gerroidea, Veliidae) from images including multiple
